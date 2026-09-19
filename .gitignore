@@ -17,5 +17,6 @@ doom_agent/recordings/*.gif
 *.gif
 *_vizdoom.ini
 
-# Internal documentation and research notes
+# Internal documentation and generated docs
 docs_internal/
+*.docx
