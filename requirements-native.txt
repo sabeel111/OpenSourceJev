@@ -1,0 +1,2 @@
+# The native backend uses the official prebuilt llama.cpp C API runtime in
+# runtime/llama.cpp/bin. No Python inference binding is required.

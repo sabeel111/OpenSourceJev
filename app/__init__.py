@@ -1,0 +1,2 @@
+"""Jev MVP application package."""
+

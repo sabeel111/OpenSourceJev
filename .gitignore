@@ -1,0 +1,21 @@
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.env
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+*.log
+
+# Models and heavy runtimes
+models/*.gguf
+runtime/llama.cpp/
+
+# Local game recordings and configs
+doom_agent/recordings/*.gif
+*.gif
+*_vizdoom.ini
+
+# Internal documentation and research notes
+docs_internal/

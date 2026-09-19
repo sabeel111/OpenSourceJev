@@ -1,0 +1,2 @@
+# CUDA is supplied by the official prebuilt llama.cpp runtime in
+# runtime/llama.cpp/bin and the local NVIDIA CUDA Toolkit.

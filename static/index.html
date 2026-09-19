@@ -1,0 +1,121 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Jev local structured decision playground">
+  <title>Jev — Structured decisions, locally</title>
+  <link rel="stylesheet" href="/static/styles.css?v=2">
+</head>
+<body>
+  <a class="skip-link" href="#main">Skip to playground</a>
+  <div class="app-shell">
+    <header class="topbar">
+      <div class="brand-lockup">
+        <div class="brand-mark" aria-hidden="true"><span></span><span></span><span></span></div>
+        <div>
+          <div class="brand-name">jev</div>
+          <div class="brand-subtitle">structured decisions, locally</div>
+        </div>
+      </div>
+      <div class="topbar-actions">
+        <div id="health-pill" class="health-pill checking" role="status" aria-live="polite">
+          <span class="status-dot"></span><span id="health-label">Checking local runtime</span>
+        </div>
+        <a class="docs-link" href="/docs" target="_blank" rel="noreferrer">API docs <span aria-hidden="true">↗</span></a>
+      </div>
+    </header>
+
+    <main id="main" class="workspace">
+      <aside class="sidebar panel">
+        <div class="panel-heading">
+          <div>
+            <p class="eyebrow">Workspace</p>
+            <h1>Playground</h1>
+          </div>
+          <span class="version-tag">MVP</span>
+        </div>
+
+        <label class="field-label" for="example-select">Start from an example</label>
+        <select id="example-select" class="control"></select>
+        <p id="example-description" class="helper-text"></p>
+
+        <div class="divider"></div>
+        <div class="section-heading">
+          <div>
+            <p class="eyebrow">Runtime</p>
+            <h2>Model adapter</h2>
+          </div>
+          <span class="tiny-badge">LOCAL</span>
+        </div>
+
+        <label class="field-label" for="mode-select">Execution mode</label>
+        <select id="mode-select" class="control">
+          <option value="mock">Demo / offline</option>
+          <option value="ollama">Ollama / local model</option>
+          <option value="native" selected>Native logits / llama.cpp</option>
+        </select>
+        <p id="mode-helper" class="helper-text">Demo mode is deterministic and needs no download. Ollama keeps inference on this laptop.</p>
+
+        <label id="model-label" class="field-label" for="model-input">Ollama model</label>
+        <input id="model-input" class="control" value="models\Qwen3-1.7B-Q8_0.gguf" autocomplete="off">
+        <p id="model-helper" class="helper-text">For native mode, enter the full path to a compatible GGUF file.</p>
+
+        <div class="tip-card">
+          <div class="tip-icon" aria-hidden="true">i</div>
+          <div><strong>Four decision primitives</strong><p>Noul, Choice, Score, and Text can be chained with simple conditions.</p></div>
+        </div>
+      </aside>
+
+      <section class="main-column">
+        <div class="hero-row">
+          <div>
+            <p class="eyebrow">Decision lab <span class="eyebrow-line"></span></p>
+            <h2>Run a structured workflow</h2>
+            <p class="lede">Turn one piece of context into inspectable decisions, scores, and actions.</p>
+          </div>
+          <div class="metric-chip"><span class="metric-value" id="step-count">0</span><span>steps configured</span></div>
+        </div>
+
+        <div class="card context-card">
+          <div class="card-header">
+            <div><p class="eyebrow">01 / Input</p><h3>Give Jev some context</h3></div>
+            <span class="required-label">Required</span>
+          </div>
+          <label class="sr-only" for="context-input">Context to evaluate</label>
+          <textarea id="context-input" class="context-input" rows="5" spellcheck="true" placeholder="Paste a customer request, event, or piece of text..."></textarea>
+          <div class="input-footer"><span>Jev will pass this context through every active step.</span><span id="char-count">0 / 20,000</span></div>
+        </div>
+
+        <div class="card workflow-card">
+          <div class="card-header">
+            <div><p class="eyebrow">02 / Workflow</p><h3>Define your decision chain</h3></div>
+            <span class="format-label">JSON</span>
+          </div>
+          <label class="sr-only" for="workflow-input">Workflow JSON</label>
+          <textarea id="workflow-input" class="code-input" rows="18" spellcheck="false"></textarea>
+          <div class="input-footer"><span>Use <code>when</code> to conditionally skip a step, e.g. <code>urgent == true</code>.</span><button id="format-button" class="text-button" type="button">Format JSON</button></div>
+        </div>
+
+        <div class="run-bar">
+          <div id="run-message" class="run-message" role="status" aria-live="polite">Ready to evaluate.</div>
+          <button id="run-button" class="primary-button" type="button"><span class="button-glyph" aria-hidden="true">▶</span> Run workflow</button>
+        </div>
+      </section>
+
+      <aside class="results-column">
+        <div class="results-sticky">
+          <div class="results-heading"><div><p class="eyebrow">03 / Output</p><h2>Decision trace</h2></div><span id="result-mode" class="tiny-badge">IDLE</span></div>
+          <div id="result-banner" class="result-banner empty" aria-live="polite"><span class="banner-glyph" aria-hidden="true">◇</span><div><strong>Nothing run yet</strong><p>Your step outputs will appear here.</p></div></div>
+          <div id="outputs-list" class="outputs-list"></div>
+          <div class="trace-divider"><span>Execution trace</span></div>
+          <div id="trace-list" class="trace-list"><div class="trace-empty">Run a workflow to inspect timing, confidence, and skipped conditions.</div></div>
+        </div>
+      </aside>
+    </main>
+
+    <footer class="footer"><span><span class="footer-pulse"></span> Runs stay on this machine</span><span>Jev MVP · local-first structured inference</span></footer>
+  </div>
+  <script src="/static/app.js?v=2" defer></script>
+</body>
+</html>

@@ -1,0 +1,13 @@
+{
+  "source": "Colab recovery bundle exported 2026-09-18",
+  "model": "Qwen/Qwen3-1.7B",
+  "noul": {
+    "temperature": 9.470457368922842,
+    "method": "sigmoid((logit_true - logit_false) / temperature)",
+    "dataset": "BoolQ",
+    "fit_examples": 700,
+    "held_out_examples": 300,
+    "seed": 42,
+    "scope": "Noul binary confidence calibration only"
+  }
+}
