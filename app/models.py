@@ -11,7 +11,7 @@ class Step(BaseModel):
     id: str = Field(min_length=1, max_length=64, pattern=r"^[A-Za-z][A-Za-z0-9_-]*$")
     kind: StepKind
     prompt: str = Field(min_length=1, max_length=2000)
-    options: List[str] = Field(default_factory=list, max_length=32)
+    options: List[str] = Field(default_factory=list, max_length=256)
     # Jev-style criteria: option -> description for Choice/Noul, or an
     # ordered list of level descriptions for Score.
     criteria: Optional[Union[Dict[str, Any], List[Union[str, Dict[str, Any]]]]] = None

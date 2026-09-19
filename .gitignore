@@ -20,3 +20,6 @@ doom_agent/recordings/*.gif
 # Internal documentation and generated docs
 docs_internal/
 *.docx
+
+# Benchmark local data
+benchmark_data/
