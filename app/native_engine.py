@@ -118,7 +118,17 @@ def _candidate_specs(step: Step) -> List[Tuple[Any, str]]:
         options = _choice_options(step)
         if not options:
             raise EngineError(f"Choice step '{step.id}' needs at least one option.")
-        return [(option, f" {option}") for option in options]
+        # Ensure the candidate set forms a prefix-free code (Kraft-McMillan principle):
+        # If any candidate is a prefix of another candidate (e.g. 'coding' vs 'coding_agent'),
+        # append a line terminator delimiter so shorter options do not mathematically
+        # subsume the open-ended marginal probability mass of longer options.
+        has_prefix_collision = any(
+            i != j and b.startswith(a)
+            for i, a in enumerate(options)
+            for j, b in enumerate(options)
+        )
+        suffix = "\n" if has_prefix_collision else ""
+        return [(option, f" {option}{suffix}") for option in options]
     if step.kind == "score":
         levels = _score_levels(step)
         if levels is not None:
