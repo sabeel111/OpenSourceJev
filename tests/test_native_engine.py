@@ -37,7 +37,7 @@ def test_native_qwen3_prefix_matches_colab_non_thinking_shape(monkeypatch):
     assert prefix.startswith("<|im_start|>user\nSTATE:")
     assert "QUESTION TYPE:\nnoul" in prefix
     assert "Allowed answers:\n- true\n- false" in prefix
-    assert prefix.endswith("<|im_start|>assistant\n<think>\n\n</think>\n\n")
+    assert prefix.endswith("<|im_start|>assistant\n<think>\n\n</think>\n\nANSWER:")
 
 
 def test_recovered_noul_temperature_softens_confidence():
@@ -74,8 +74,9 @@ def test_native_jev_style_criteria_supports_descriptive_levels():
     specs = _candidate_specs(step)
 
     assert [value for value, _ in specs] == [0.0, 1.0, 2.0]
-    assert specs[0][1] == " Isolated user error; no service impact"
-    assert "- Blocking issue; no workaround exists" in _criteria_text(step)
+    assert specs[0][1] == " 0"
+    assert "2: Blocking issue; no workaround exists" in _criteria_text(step)
+
 
 
 def test_native_score_separates_short_answer_labels_from_descriptions():

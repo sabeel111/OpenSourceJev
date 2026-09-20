@@ -58,8 +58,9 @@ def _length_penalty_alpha() -> float:
     """Return the length normalization exponent for multi-token candidates."""
     configured = os.getenv("JEV_LENGTH_PENALTY_ALPHA")
     if configured is not None:
-        return max(_env_float("JEV_LENGTH_PENALTY_ALPHA", 0.7), 0.0)
-    return 0.7
+        return max(_env_float("JEV_LENGTH_PENALTY_ALPHA", 0.0), 0.0)
+    return 0.0
+
 
 
 def _logsumexp(values: Sequence[float]) -> float:
@@ -95,7 +96,7 @@ def _score_levels(step: Step) -> Optional[List[Tuple[str, str]]]:
         levels = []
         for index, item in enumerate(step.criteria):
             if isinstance(item, str):
-                levels.append((item, item))
+                levels.append((str(index), item))
                 continue
             if isinstance(item, dict):
                 label = item.get("label") or item.get("name") or item.get("id")
@@ -121,6 +122,9 @@ def _candidate_specs(step: Step) -> List[Tuple[Any, str]]:
     if step.kind == "score":
         levels = _score_levels(step)
         if levels is not None:
+            scoring_mode = os.getenv("JEV_SCORE_SCORING_MODE", "index").lower()
+            if scoring_mode == "text":
+                return [(float(index), f" {description}") for index, (_label, description) in enumerate(levels)]
             return [(float(index), f" {label}") for index, (label, _description) in enumerate(levels)]
         if step.max <= step.min:
             raise EngineError(f"Score step '{step.id}' must have max greater than min.")
@@ -160,10 +164,11 @@ def _criteria_text(step: Step) -> str:
         lines = ["Ordered score levels:"]
         levels = _score_levels(step)
         if levels is not None:
-            lines.extend(
-                f"- {label}" if label == description else f"- {label}: {description}"
-                for label, description in levels
-            )
+            for index, (label, description) in enumerate(levels):
+                if label == str(index) or label == description:
+                    lines.append(f"{index}: {description}")
+                else:
+                    lines.append(f"- {label}: {description}")
         else:
             lines.extend(f"- {_format_number(value)}" for value, _ in _candidate_specs(step))
         return "\n".join(lines)
@@ -329,7 +334,11 @@ class NativeJevEngine:
                 "token_count": token_count,
             }
             if step.kind in {"choice", "score"}:
-                candidate["label"] = _text.strip()
+                if step.kind == "score" and _score_levels(step) is not None:
+                    levels = _score_levels(step)
+                    candidate["label"] = levels[index][1] if levels else _text.strip()
+                else:
+                    candidate["label"] = _text.strip()
             if step.kind == "noul":
                 candidate["raw_score"] = round(raw_probabilities[index], 6)
                 candidate["calibrated_score"] = round(probability, 6)
@@ -354,21 +363,27 @@ class NativeJevEngine:
             f"STATE:\n{state}\n\n"
             f"QUESTION TYPE:\n{step.kind}\n\n"
             f"INSTRUCTIONS:\n{step.prompt}\n\n"
-            f"CRITERIA:\n{_criteria_text(step)}\n\n"
-            "ANSWER:"
+            f"CRITERIA:\n{_criteria_text(step)}"
         )
+        if step.kind == "score" and _score_levels(step) is not None:
+            max_idx = len(_score_levels(step)) - 1
+            body += f"\n\nSelect the score level number (0 to {max_idx}) that best matches."
+        elif step.kind == "noul":
+            body += "\n\nAnswer with true or false."
+
         style = os.getenv("JEV_LLAMA_PROMPT_STYLE", "qwen3").lower()
         if style == "qwen3":
             return (
                 "<|im_start|>user\n"
                 f"{body}<|im_end|>\n"
                 "<|im_start|>assistant\n<think>\n\n</think>\n\n"
+                "ANSWER:"
             )
         instruction = (
             "You are a structured decision engine. Evaluate the decision and output only the answer value. "
             "Do not explain your reasoning. Do not output JSON. Do not output a thinking block."
         )
-        return f"System:\n{instruction}\n\n{body}\n\nAssistant:\n"
+        return f"System:\n{instruction}\n\n{body}\n\nAssistant:\nANSWER:"
 
     @staticmethod
     def _prefix_tokens(model: Any, prefix: str) -> List[int]:
