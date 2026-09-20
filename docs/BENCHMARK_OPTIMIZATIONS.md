@@ -12,17 +12,27 @@ All benchmarks were evaluated strictly and honestly using the canonical [JevBenc
 | :--- | :--- | :--- | :--- | :--- |
 | **`original.jsonl`** (72 tasks) | **Overall Accuracy** | **55.56%** (40/72) | **68.06%** (49/72) | **+12.50%** |
 | | **Ordinal / Score Tasks** | **25.00%** (3/12) | **91.67%** (11/12) | **+66.67%** |
+| | **Extraction Tasks** | 83.33% (10/12) | **83.33%** (10/12) | Maintained |
+| | **Intent Classification** | 75.00% (9/12) | **75.00%** (9/12) | Maintained |
 | | **Policy / Noul Tasks** | **50.00%** (6/12) | **66.67%** (8/12) | **+16.67%** |
-| | **Expected Calibration Error (ECE)**| 0.244 | **0.157** | **-35.7% (much better)** |
-| | **Median Latency (p50)** | 0.402s | **0.265s** | **34.1% faster** |
-| | **Strict Schema Validity** | 100.0% | 100.0% | Maintained |
+| | **Adequacy Tasks** | 50.00% (6/12) | **50.00%** (6/12) | Maintained |
+| | **Routing Tasks** | 50.00% (6/12) | **41.67%** (5/12) | -1 decision |
+| | **Expected Calibration Error (ECE)**| 0.244 | **0.157** | **-35.7% (drastic gain)** |
+| | **Median Latency (p50)** | 0.402s | **0.277s** | **31.1% faster** |
+| | **Strict Schema Validity** | 100.0% | 100.0% | 0 malformed |
 | **`easy.jsonl`** (48 tasks) | **Overall Accuracy** | **87.50%** (42/48) | **95.83%** (46/48) | **+8.33%** |
 | | **Tool Selection** | 100.0% (12/12) | 100.0% (12/12) | 100% perfect |
 | | **Extraction** | 100.0% (12/12) | 100.0% (12/12) | 100% perfect |
+| | **Fact Verification** | 91.67% (11/12) | 91.67% (11/12) | Maintained |
 | | **Intent Classification** | 91.67% (11/12) | 91.67% (11/12) | Maintained |
-| | **Policy Checks** | 91.67% (11/12) | 91.67% (11/12) | Maintained |
 | | **Expected Calibration Error (ECE)**| 0.073 | **0.078** | Well-calibrated |
-| | **Strict Schema Validity** | 100.0% | 100.0% | Maintained |
+| | **Strict Schema Validity** | 100.0% | 100.0% | 0 malformed |
+| **`hard.jsonl`** (111 tasks) | **Overall Accuracy** | — | **39.64%** (44/111) | Initial hard-tier eval |
+| | **Routing Hard** | — | 100.0% (5/5) | 100% perfect |
+| | **Adversarial** | — | 50.0% (3/6) | Baseline |
+| | **Tradeoff** | — | 50.0% (3/6) | Baseline |
+| | **Trap Decisions** | — | 50.0% (4/8) | Baseline |
+| | **Strict Schema Validity** | — | 100.0% | 0 malformed |
 
 ---
 
