@@ -1,121 +1,354 @@
 <!doctype html>
-<html lang="en">
+<html lang="en" class="dark">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="description" content="Jev local structured decision playground">
-  <title>Jev — Structured decisions, locally</title>
-  <link rel="stylesheet" href="/static/styles.css?v=2">
+  <meta name="description" content="Jev System One — 100% Local Structured Decision Playground on Native CUDA">
+  <title>Jev — System One Structured Decision Studio</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/static/styles.css?v=3">
 </head>
 <body>
   <a class="skip-link" href="#main">Skip to playground</a>
-  <div class="app-shell">
-    <header class="topbar">
-      <div class="brand-lockup">
-        <div class="brand-mark" aria-hidden="true"><span></span><span></span><span></span></div>
-        <div>
-          <div class="brand-name">jev</div>
-          <div class="brand-subtitle">structured decisions, locally</div>
+
+  <div class="app-layout">
+    <!-- Top Corporate Navigation Bar -->
+    <header class="navbar">
+      <div class="nav-left">
+        <div class="brand">
+          <div class="brand-logo" aria-hidden="true">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <rect x="2" y="2" width="20" height="20" rx="6" fill="#10B981" fill-opacity="0.12" stroke="#10B981" stroke-width="1.5"/>
+              <path d="M7 12L10.5 15.5L17 9" stroke="#10B981" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </div>
+          <div class="brand-text">
+            <div class="brand-title-wrap">
+              <span class="brand-title">Jev</span>
+              <span class="brand-badge">System One</span>
+            </div>
+            <span class="brand-caption">Local Non-Autoregressive Decision Engine</span>
+          </div>
         </div>
       </div>
-      <div class="topbar-actions">
-        <div id="health-pill" class="health-pill checking" role="status" aria-live="polite">
-          <span class="status-dot"></span><span id="health-label">Checking local runtime</span>
+
+      <div class="nav-center">
+        <div id="health-pill" class="telemetry-pill checking" role="status" aria-live="polite">
+          <span class="pulsing-dot"></span>
+          <span id="health-label" class="telemetry-label">Connecting to runtime...</span>
         </div>
-        <a class="docs-link" href="/docs" target="_blank" rel="noreferrer">API docs <span aria-hidden="true">↗</span></a>
+        <div class="telemetry-pill speed-pill">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+          <span id="speed-label">Sub-50ms Logits</span>
+        </div>
+      </div>
+
+      <div class="nav-right">
+        <button id="reset-btn" class="nav-btn" title="Reset playground to defaults" type="button">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>
+          <span>Reset</span>
+        </button>
+        <a class="nav-link" href="/docs" target="_blank" rel="noreferrer">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1-2.5-2.5Z"/><path d="M6 6h10"/><path d="M6 10h10"/></svg>
+          <span>API Docs</span>
+        </a>
       </div>
     </header>
 
-    <main id="main" class="workspace">
-      <aside class="sidebar panel">
-        <div class="panel-heading">
-          <div>
-            <p class="eyebrow">Workspace</p>
-            <h1>Playground</h1>
+    <!-- Main Workspace Studio -->
+    <main id="main" class="studio-grid">
+
+      <!-- Left Sidebar: Configuration & Presets -->
+      <aside class="sidebar-col">
+        <div class="panel-card config-card">
+          <div class="section-header">
+            <div class="section-icon">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+            </div>
+            <div>
+              <h3 class="section-title">Workflow Presets</h3>
+              <p class="section-sub">Production patterns & guardrails</p>
+            </div>
           </div>
-          <span class="version-tag">MVP</span>
-        </div>
 
-        <label class="field-label" for="example-select">Start from an example</label>
-        <select id="example-select" class="control"></select>
-        <p id="example-description" class="helper-text"></p>
-
-        <div class="divider"></div>
-        <div class="section-heading">
-          <div>
-            <p class="eyebrow">Runtime</p>
-            <h2>Model adapter</h2>
+          <div class="form-group">
+            <label class="input-label" for="example-select">Industry Template</label>
+            <div class="select-wrapper">
+              <select id="example-select" class="form-select"></select>
+            </div>
+            <p id="example-description" class="field-hint"></p>
           </div>
-          <span class="tiny-badge">LOCAL</span>
-        </div>
 
-        <label class="field-label" for="mode-select">Execution mode</label>
-        <select id="mode-select" class="control">
-          <option value="mock">Demo / offline</option>
-          <option value="ollama">Ollama / local model</option>
-          <option value="native" selected>Native logits / llama.cpp</option>
-        </select>
-        <p id="mode-helper" class="helper-text">Demo mode is deterministic and needs no download. Ollama keeps inference on this laptop.</p>
+          <div class="sidebar-divider"></div>
 
-        <label id="model-label" class="field-label" for="model-input">Ollama model</label>
-        <input id="model-input" class="control" value="models\Qwen3-1.7B-Q8_0.gguf" autocomplete="off">
-        <p id="model-helper" class="helper-text">For native mode, enter the full path to a compatible GGUF file.</p>
+          <div class="section-header">
+            <div class="section-icon">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="18" height="18" x="3" y="3" rx="2"/><path d="m9 8 3 3-3 3"/><path d="m15 16H9"/></svg>
+            </div>
+            <div>
+              <h3 class="section-title">Engine Runtime</h3>
+              <p class="section-sub">Model & inference adapter</p>
+            </div>
+          </div>
 
-        <div class="tip-card">
-          <div class="tip-icon" aria-hidden="true">i</div>
-          <div><strong>Four decision primitives</strong><p>Noul, Choice, Score, and Text can be chained with simple conditions.</p></div>
+          <div class="form-group">
+            <label class="input-label">Inference Engine</label>
+            <div class="hardware-engine-badge">
+              <div class="engine-badge-top">
+                <span class="engine-badge-dot"></span>
+                <span class="engine-badge-title">Native CUDA Engine</span>
+                <span class="engine-badge-tag">100% LOCAL</span>
+              </div>
+              <div class="engine-badge-desc">Direct llama.cpp C-API · Flash Attention · Zero Network</div>
+            </div>
+            <select id="mode-select" style="display: none;">
+              <option value="native" selected>Native CUDA</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label id="model-label" class="input-label" for="model-input">Model Weights Path</label>
+            <input id="model-input" class="form-input code-font" value="models\Qwen3-1.7B-Q8_0.gguf" autocomplete="off" spellcheck="false">
+            <p id="model-helper" class="field-hint">Path to 100% offline local GGUF model file on disk.</p>
+          </div>
+
+          <div class="form-group">
+            <div class="label-split">
+              <label class="input-label" for="temperature-input">Temperature</label>
+              <span id="temp-val" class="pill-value">0.0 (Argmax)</span>
+            </div>
+            <input type="range" id="temperature-input" min="0" max="1" step="0.05" value="0.0" class="slider-input">
+            <p class="field-hint">0.0 guarantees deterministic, calibrated discrete choices.</p>
+          </div>
+
+          <div class="sidebar-divider"></div>
+
+          <!-- Primitives Reference Card -->
+          <div class="primitives-card">
+            <div class="primitive-header">
+              <span class="sub-heading">Jev System One Primitives</span>
+            </div>
+            <div class="primitive-item">
+              <span class="badge noul-badge">Noul</span>
+              <span class="primitive-desc">Boolean probability (True/False gate)</span>
+            </div>
+            <div class="primitive-item">
+              <span class="badge choice-badge">Choice</span>
+              <span class="primitive-desc">Categorical distribution over rubrics</span>
+            </div>
+            <div class="primitive-item">
+              <span class="badge score-badge">Score</span>
+              <span class="primitive-desc">Bounded scalar rating & severity</span>
+            </div>
+            <div class="primitive-item">
+              <span class="badge text-badge">Text</span>
+              <span class="primitive-desc">Conditioned concise guided generation</span>
+            </div>
+          </div>
         </div>
       </aside>
 
-      <section class="main-column">
-        <div class="hero-row">
-          <div>
-            <p class="eyebrow">Decision lab <span class="eyebrow-line"></span></p>
-            <h2>Run a structured workflow</h2>
-            <p class="lede">Turn one piece of context into inspectable decisions, scores, and actions.</p>
+      <!-- Center Studio Column: Context Input & Workflow Builder -->
+      <section class="studio-col">
+        <!-- Context Card -->
+        <div class="panel-card context-panel">
+          <div class="panel-header">
+            <div class="panel-heading-left">
+              <span class="step-num">01</span>
+              <div>
+                <h2 class="panel-title">Input Context</h2>
+                <p class="panel-sub">Raw state, user request, document chunk, or command</p>
+              </div>
+            </div>
+            <div class="panel-actions">
+              <button id="clear-context-btn" class="icon-text-btn" type="button" title="Clear context">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+                Clear
+              </button>
+            </div>
           </div>
-          <div class="metric-chip"><span class="metric-value" id="step-count">0</span><span>steps configured</span></div>
+
+          <div class="textarea-container">
+            <textarea id="context-input" class="modern-textarea" rows="4" spellcheck="true" placeholder="Paste incoming request, state object, terminal command, or context text to evaluate..."></textarea>
+          </div>
+
+          <div class="card-footer">
+            <div class="footer-meta">
+              <span class="status-indicator"></span>
+              <span>Fed into all active workflow steps</span>
+            </div>
+            <div class="char-counter">
+              <span id="char-count">0</span> / 20,000 chars · <span id="token-estimate">~0 tokens</span>
+            </div>
+          </div>
         </div>
 
-        <div class="card context-card">
-          <div class="card-header">
-            <div><p class="eyebrow">01 / Input</p><h3>Give Jev some context</h3></div>
-            <span class="required-label">Required</span>
+        <!-- Workflow Builder Card -->
+        <div class="panel-card workflow-panel">
+          <div class="panel-header">
+            <div class="panel-heading-left">
+              <span class="step-num">02</span>
+              <div>
+                <h2 class="panel-title">Decision Chain</h2>
+                <p class="panel-sub">Typed non-autoregressive decision steps & conditional gates</p>
+              </div>
+            </div>
+            <!-- Dual-Mode Tabs: Visual Builder vs JSON Code -->
+            <div class="segmented-control">
+              <button id="tab-visual" class="segment-btn active" type="button">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="7" height="7" x="3" y="3" rx="1"/><rect width="7" height="7" x="14" y="3" rx="1"/><rect width="7" height="7" x="14" y="14" rx="1"/><rect width="7" height="7" x="3" y="14" rx="1"/></svg>
+                Visual Builder
+              </button>
+              <button id="tab-json" class="segment-btn" type="button">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
+                JSON Schema
+              </button>
+            </div>
           </div>
-          <label class="sr-only" for="context-input">Context to evaluate</label>
-          <textarea id="context-input" class="context-input" rows="5" spellcheck="true" placeholder="Paste a customer request, event, or piece of text..."></textarea>
-          <div class="input-footer"><span>Jev will pass this context through every active step.</span><span id="char-count">0 / 20,000</span></div>
+
+          <!-- Tab 1: Visual Step Builder -->
+          <div id="view-visual" class="tab-content active">
+            <div id="visual-steps-list" class="visual-steps-container"></div>
+            <div class="builder-actions">
+              <button id="add-step-btn" class="secondary-btn" type="button">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 5v14M5 12h14"/></svg>
+                Add Decision Step
+              </button>
+              <div class="quick-add-group">
+                <span class="quick-label">Quick add:</span>
+                <button class="quick-add-chip" data-kind="noul">+ Noul Gate</button>
+                <button class="quick-add-chip" data-kind="choice">+ Choice Rubric</button>
+                <button class="quick-add-chip" data-kind="score">+ Score Metric</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Tab 2: JSON Code Editor View -->
+          <div id="view-json" class="tab-content">
+            <div class="code-editor-wrap">
+              <textarea id="workflow-input" class="modern-code-area" rows="16" spellcheck="false"></textarea>
+            </div>
+            <div class="json-footer">
+              <span class="condition-hint">Use <code>"when": "step_id == value"</code> to conditionally execute or branch steps.</span>
+              <button id="format-button" class="action-link-btn" type="button">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="4 7 4 4 20 4 20 7"/><line x1="9" y1="20" x2="15" y2="20"/><line x1="12" y1="4" x2="12" y2="20"/></svg>
+                Format JSON
+              </button>
+            </div>
+          </div>
         </div>
 
-        <div class="card workflow-card">
-          <div class="card-header">
-            <div><p class="eyebrow">02 / Workflow</p><h3>Define your decision chain</h3></div>
-            <span class="format-label">JSON</span>
+        <!-- Sticky Floating Run Action Bar -->
+        <div class="execution-bar">
+          <div class="run-status-block">
+            <div class="status-dot-pulse"></div>
+            <span id="run-message" class="run-status-text" role="status" aria-live="polite">Ready to evaluate</span>
           </div>
-          <label class="sr-only" for="workflow-input">Workflow JSON</label>
-          <textarea id="workflow-input" class="code-input" rows="18" spellcheck="false"></textarea>
-          <div class="input-footer"><span>Use <code>when</code> to conditionally skip a step, e.g. <code>urgent == true</code>.</span><button id="format-button" class="text-button" type="button">Format JSON</button></div>
-        </div>
 
-        <div class="run-bar">
-          <div id="run-message" class="run-message" role="status" aria-live="polite">Ready to evaluate.</div>
-          <button id="run-button" class="primary-button" type="button"><span class="button-glyph" aria-hidden="true">▶</span> Run workflow</button>
+          <div class="run-action-wrap">
+            <span class="shortcut-pill">⌘ + Enter</span>
+            <button id="run-button" class="primary-run-btn" type="button">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+              <span>Execute Workflow</span>
+            </button>
+          </div>
         </div>
       </section>
 
-      <aside class="results-column">
-        <div class="results-sticky">
-          <div class="results-heading"><div><p class="eyebrow">03 / Output</p><h2>Decision trace</h2></div><span id="result-mode" class="tiny-badge">IDLE</span></div>
-          <div id="result-banner" class="result-banner empty" aria-live="polite"><span class="banner-glyph" aria-hidden="true">◇</span><div><strong>Nothing run yet</strong><p>Your step outputs will appear here.</p></div></div>
-          <div id="outputs-list" class="outputs-list"></div>
-          <div class="trace-divider"><span>Execution trace</span></div>
-          <div id="trace-list" class="trace-list"><div class="trace-empty">Run a workflow to inspect timing, confidence, and skipped conditions.</div></div>
+      <!-- Right Column: Decision Intelligence & Telemetry -->
+      <aside class="results-col">
+        <div class="panel-card results-sticky-panel">
+          <div class="panel-header">
+            <div class="panel-heading-left">
+              <span class="step-num">03</span>
+              <div>
+                <h2 class="panel-title">Decision Output</h2>
+                <p class="panel-sub">Typed outputs, probabilities & trace</p>
+              </div>
+            </div>
+            <span id="result-mode" class="runtime-badge">IDLE</span>
+          </div>
+
+          <!-- Summary Metric Ribbon -->
+          <div id="telemetry-ribbon" class="telemetry-ribbon hidden">
+            <div class="ribbon-metric">
+              <span class="metric-label">Latency</span>
+              <span id="metric-latency" class="metric-val">—</span>
+            </div>
+            <div class="ribbon-metric">
+              <span class="metric-label">Steps Done</span>
+              <span id="metric-steps" class="metric-val">—</span>
+            </div>
+            <div class="ribbon-metric">
+              <span class="metric-label">Engine</span>
+              <span id="metric-engine" class="metric-val">—</span>
+            </div>
+          </div>
+
+          <!-- Secondary Tabs in Output Panel: Results vs Timeline vs Export -->
+          <div class="results-tabs">
+            <button id="res-tab-decisions" class="res-tab-btn active" type="button">Decisions</button>
+            <button id="res-tab-trace" class="res-tab-btn" type="button">Execution Trace</button>
+            <button id="res-tab-export" class="res-tab-btn" type="button">Code Export</button>
+          </div>
+
+          <!-- Empty State -->
+          <div id="result-empty" class="empty-state-card">
+            <div class="empty-icon-ring">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><polygon points="12 2 2 7 12 12 22 7 12 2"/><polyline points="2 17 12 22 22 17"/><polyline points="2 12 12 17 22 12"/></svg>
+            </div>
+            <h4>No decisions evaluated yet</h4>
+            <p>Click "Execute Workflow" or press <code>⌘+Enter</code> to run the decision chain through the local Jev engine.</p>
+          </div>
+
+          <!-- View A: Decisions List -->
+          <div id="res-view-decisions" class="res-view active">
+            <div id="outputs-list" class="outputs-container"></div>
+          </div>
+
+          <!-- View B: Execution Trace -->
+          <div id="res-view-trace" class="res-view">
+            <div id="trace-list" class="trace-container"></div>
+          </div>
+
+          <!-- View C: Code Export -->
+          <div id="res-view-export" class="res-view">
+            <div class="export-container">
+              <div class="export-header">
+                <span class="sub-heading">cURL Terminal Command</span>
+                <button id="copy-curl-btn" class="copy-chip" type="button">Copy cURL</button>
+              </div>
+              <pre class="code-snippet"><code id="curl-code"></code></pre>
+
+              <div class="export-header" style="margin-top: 14px;">
+                <span class="sub-heading">Python SDK (requests / httpx)</span>
+                <button id="copy-py-btn" class="copy-chip" type="button">Copy Python</button>
+              </div>
+              <pre class="code-snippet"><code id="python-code"></code></pre>
+            </div>
+          </div>
+
         </div>
       </aside>
+
     </main>
 
-    <footer class="footer"><span><span class="footer-pulse"></span> Runs stay on this machine</span><span>Jev MVP · local-first structured inference</span></footer>
+    <!-- App Footer -->
+    <footer class="app-footer">
+      <div class="footer-left">
+        <span class="privacy-lock-icon">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+        </span>
+        <span>100% Offline & Private — In-memory GPU logits never leave this machine</span>
+      </div>
+      <div class="footer-right">
+        <span>Jev System One · Native CUDA Qwen 1.7B</span>
+      </div>
+    </footer>
   </div>
-  <script src="/static/app.js?v=2" defer></script>
+
+  <script src="/static/app.js?v=3" defer></script>
 </body>
 </html>

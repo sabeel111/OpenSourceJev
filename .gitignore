@@ -21,5 +21,11 @@ doom_agent/recordings/*.gif
 docs_internal/
 *.docx
 
-# Benchmark local data
+# Benchmark local data and scripts
 benchmark_data/
+benchmark_results/
+benchmark_runs/
+benchmark*.py
+scratch/
+jevbench/
+
