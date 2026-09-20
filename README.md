@@ -2,13 +2,16 @@
 
 > **A high-performance, local "System One" AI decision engine powered by `llama.cpp` and Qwen.**
 
+> [!IMPORTANT]
+> **Research Experiment Notice**: This project is purely an independent **research experiment** and academic exploration into inference-time logits projection, Kahneman System 1 decision architectures, and calibration on consumer hardware. It is not a production service and is not affiliated with or endorsed by TypeSafe AI.
+
 [![Python 3.11+](https://img.shields.io/badge/python-3.11+-blue.svg)](https://www.python.org/)
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.115+-009688.svg)](https://fastapi.tiangolo.com/)
 [![llama.cpp](https://img.shields.io/badge/backend-llama.cpp%20CUDA-orange.svg)](https://github.com/ggerganov/llama.cpp)
 [![ViZDoom](https://img.shields.io/badge/demo-ViZDoom%20Agent-red.svg)](https://vizdoom.farama.org/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
-**OpenSourceJev** is an open-source, local implementation of the **"System One" AI decision paradigm** popularized by TypeSafe AI's Jev. Instead of using Large Language Models (LLMs) to generate verbose text or stream fragile JSON blobs that require retry loops and regex parsing, OpenSourceJev turns open-weight models (like **Qwen3-1.7B**) into ultra-fast, deterministic, strictly-typed decision engines.
+**OpenSourceJev** is an open-source research experiment exploring a local implementation of the **"System One" AI decision paradigm** popularized by TypeSafe AI's Jev. Instead of using Large Language Models (LLMs) to generate verbose text or stream fragile JSON blobs that require retry loops and regex parsing, OpenSourceJev turns open-weight models (like **Qwen3-1.7B**) into ultra-fast, deterministic, strictly-typed decision engines.
 
 It runs locally on consumer laptops (tested on an RTX 3050 Laptop GPU with 4GB VRAM) delivering sub-100ms structured judgments.
 
