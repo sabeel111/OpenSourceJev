@@ -208,9 +208,12 @@ def _load_library() -> ctypes.CDLL:
             backend = ctypes.CDLL(str(backend_path))
             backend.ggml_backend_load_all.argtypes = []
             backend.ggml_backend_load_all.restype = None
-            backend.ggml_backend_load_all()
+            backend.ggml_backend_load_all_from_path.argtypes = [ctypes.c_char_p]
+            backend.ggml_backend_load_all_from_path.restype = None
+            backend.ggml_backend_load_all_from_path(str(runtime_dir).encode("utf-8"))
             lib = ctypes.CDLL(str(path))
             _configure_library(lib)
+            lib.llama_backend_init()
         except OSError as exc:
             raise RuntimeError(f"Could not load the prebuilt llama.cpp runtime: {exc}") from exc
 
@@ -228,12 +231,38 @@ def native_status() -> dict:
     try:
         lib = _load_library()
         info = (lib.llama_print_system_info() or b"").decode("utf-8", errors="replace")
+
+        devices = []
+        try:
+            runtime_dir = path.parent
+            base_lib = ctypes.CDLL(str(runtime_dir / "ggml-base.dll"))
+            backend_lib = _BACKEND_LIBRARY or ctypes.CDLL(str(runtime_dir / "ggml.dll"))
+
+            backend_lib.ggml_backend_dev_count.restype = ctypes.c_size_t
+            backend_lib.ggml_backend_dev_get.argtypes = [ctypes.c_size_t]
+            backend_lib.ggml_backend_dev_get.restype = ctypes.c_void_p
+            base_lib.ggml_backend_dev_name.argtypes = [ctypes.c_void_p]
+            base_lib.ggml_backend_dev_name.restype = ctypes.c_char_p
+            base_lib.ggml_backend_dev_description.argtypes = [ctypes.c_void_p]
+            base_lib.ggml_backend_dev_description.restype = ctypes.c_char_p
+
+            count = int(backend_lib.ggml_backend_dev_count())
+            for i in range(count):
+                dev = backend_lib.ggml_backend_dev_get(i)
+                if dev:
+                    name = (base_lib.ggml_backend_dev_name(dev) or b"").decode("utf-8", errors="replace")
+                    desc = (base_lib.ggml_backend_dev_description(dev) or b"").decode("utf-8", errors="replace").strip()
+                    devices.append({"name": name, "description": desc})
+        except Exception:
+            pass
+
         return {
             "available": True,
             "cuda": bool(lib.llama_supports_gpu_offload()),
             "library": str(path),
             "version": (lib.llama_version() or b"").decode("utf-8", errors="replace"),
             "system_info": info,
+            "devices": devices,
         }
     except (OSError, RuntimeError) as exc:
         return {"available": False, "cuda": False, "library": str(path), "error": str(exc)}

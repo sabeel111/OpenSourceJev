@@ -1,354 +1,589 @@
 <!doctype html>
-<html lang="en" class="dark">
+<html lang="en">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="description" content="Jev System One — 100% Local Structured Decision Playground on Native CUDA">
-  <title>Jev — System One Structured Decision Studio</title>
+  <meta name="description" content="Jev — Local Non-Autoregressive Decision Engine">
+  <title>Jev — Local Decision Engine</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="/static/styles.css?v=3">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/static/styles.css?v=4">
 </head>
 <body>
-  <a class="skip-link" href="#main">Skip to playground</a>
+  <div class="app-container">
 
-  <div class="app-layout">
-    <!-- Top Corporate Navigation Bar -->
-    <header class="navbar">
-      <div class="nav-left">
-        <div class="brand">
-          <div class="brand-logo" aria-hidden="true">
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <rect x="2" y="2" width="20" height="20" rx="6" fill="#10B981" fill-opacity="0.12" stroke="#10B981" stroke-width="1.5"/>
-              <path d="M7 12L10.5 15.5L17 9" stroke="#10B981" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+    <!-- =========================================================================
+         LEFT SIDEBAR
+         ========================================================================= -->
+    <aside class="sidebar-nav">
+      <!-- Brand Header -->
+      <div class="brand-block">
+        <div class="brand-logo-wrap">
+          <!-- 5-Dot Constellation Logo matching reference -->
+          <svg class="brand-logo-icon" width="28" height="28" viewBox="0 0 32 32" fill="none">
+            <circle cx="16" cy="7" r="3.2" fill="#0F172A" />
+            <circle cx="7" cy="16" r="3.2" fill="#0F172A" />
+            <circle cx="16" cy="16" r="3.5" fill="#10B981" />
+            <circle cx="25" cy="16" r="3.2" fill="#0F172A" />
+            <circle cx="16" cy="25" r="3.2" fill="#0F172A" />
+          </svg>
+          <span class="brand-title">Jev</span>
+        </div>
+        <p class="brand-subtitle">Local Non-Autoregressive<br>Decision Engine</p>
+      </div>
+
+      <!-- Navigation Menu -->
+      <nav class="nav-menu" aria-label="Main Navigation">
+        <button id="nav-playground" class="nav-item active" type="button">
+          <svg class="nav-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <polygon points="5 3 19 12 5 21 5 3"/>
+          </svg>
+          <span>Playground</span>
+        </button>
+
+        <button id="nav-workflows" class="nav-item" type="button">
+          <svg class="nav-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="6" y1="3" x2="6" y2="15"/>
+            <circle cx="18" cy="6" r="3"/>
+            <circle cx="6" cy="18" r="3"/>
+            <path d="M18 9a9 9 0 0 1-9 9"/>
+          </svg>
+          <span>Workflows</span>
+        </button>
+
+        <button id="nav-models" class="nav-item" type="button">
+          <svg class="nav-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/>
+            <polyline points="3.27 6.96 12 12.01 20.73 6.96"/>
+            <line x1="12" y1="22.08" x2="12" y2="12"/>
+          </svg>
+          <span>Models</span>
+        </button>
+
+        <button id="nav-templates" class="nav-item" type="button">
+          <svg class="nav-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+            <polyline points="14 2 14 8 20 8"/>
+            <line x1="16" y1="13" x2="8" y2="13"/>
+            <line x1="16" y1="17" x2="8" y2="17"/>
+            <polyline points="10 9 9 9 8 9"/>
+          </svg>
+          <span>Templates</span>
+        </button>
+
+        <button id="nav-logs" class="nav-item" type="button">
+          <svg class="nav-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>
+          </svg>
+          <span>Logs</span>
+        </button>
+
+        <button id="nav-settings" class="nav-item" type="button">
+          <svg class="nav-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="3"/>
+            <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+          </svg>
+          <span>Settings</span>
+        </button>
+      </nav>
+
+      <!-- Sidebar Bottom: Status & Profile -->
+      <div class="sidebar-footer">
+        <!-- Engine Online Card -->
+        <button id="engine-status-card" class="engine-status-card" type="button" title="View Hardware & CUDA Telemetry">
+          <div class="engine-status-left">
+            <div class="status-indicator-dot"></div>
+            <div class="engine-status-info">
+              <span id="sidebar-engine-title" class="engine-status-title">Engine Online</span>
+              <span id="sidebar-engine-desc" class="engine-status-sub">CUDA (Local)<br>RTX 3050 (4 GB)</span>
+            </div>
+          </div>
+          <svg class="chevron-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polyline points="9 18 15 12 9 6"/>
+          </svg>
+        </button>
+
+        <!-- User Profile -->
+        <div class="user-profile-wrap">
+          <div class="user-profile-card">
+            <div class="user-avatar">S</div>
+            <span class="user-name">Sabeel</span>
+            <svg class="chevron-down-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <polyline points="6 9 12 15 18 9"/>
             </svg>
           </div>
-          <div class="brand-text">
-            <div class="brand-title-wrap">
-              <span class="brand-title">Jev</span>
-              <span class="brand-badge">System One</span>
-            </div>
-            <span class="brand-caption">Local Non-Autoregressive Decision Engine</span>
+        </div>
+      </div>
+    </aside>
+
+    <!-- =========================================================================
+         MAIN CANVAS (CENTER)
+         ========================================================================= -->
+    <main class="main-content">
+      <!-- Top Action Bar matching reference -->
+      <div class="top-nav-bar">
+        <div class="top-nav-pills">
+          <!-- CPU / CUDA Active Pill -->
+          <div id="telemetry-pill-active" class="top-pill status-pill">
+            <span class="pill-dot"></span>
+            <span id="pill-engine-text">CUDA Active</span>
           </div>
+
+          <!-- Sub-50ms / Latency Pill -->
+          <div id="telemetry-pill-speed" class="top-pill speed-pill">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>
+            </svg>
+            <span id="pill-speed-text">Sub-50ms</span>
+          </div>
+
+          <!-- Docs Link -->
+          <a class="top-pill docs-pill" href="/docs" target="_blank" rel="noreferrer" title="Open API Documentation">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+              <polyline points="14 2 14 8 20 8"/>
+              <line x1="16" y1="13" x2="8" y2="13"/>
+              <line x1="16" y1="17" x2="8" y2="17"/>
+            </svg>
+            <span>Docs</span>
+          </a>
+
+          <!-- Theme Toggle Button -->
+          <button id="theme-toggle-btn" class="top-icon-btn" type="button" title="Toggle Light / Dark Mode">
+            <svg id="theme-sun-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="12" cy="12" r="5"/>
+              <line x1="12" y1="1" x2="12" y2="3"/>
+              <line x1="12" y1="21" x2="12" y2="23"/>
+              <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/>
+              <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/>
+              <line x1="1" y1="12" x2="3" y2="12"/>
+              <line x1="21" y1="12" x2="23" y2="12"/>
+              <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/>
+              <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>
+            </svg>
+            <svg id="theme-moon-icon" style="display: none;" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
+            </svg>
+          </button>
         </div>
       </div>
 
-      <div class="nav-center">
-        <div id="health-pill" class="telemetry-pill checking" role="status" aria-live="polite">
-          <span class="pulsing-dot"></span>
-          <span id="health-label" class="telemetry-label">Connecting to runtime...</span>
-        </div>
-        <div class="telemetry-pill speed-pill">
-          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
-          <span id="speed-label">Sub-50ms Logits</span>
-        </div>
+      <!-- Page Heading -->
+      <div class="page-header">
+        <h1 class="page-title">Playground</h1>
+        <p class="page-subtitle">Run local decision models. Fast. Private. Under your control.</p>
       </div>
 
-      <div class="nav-right">
-        <button id="reset-btn" class="nav-btn" title="Reset playground to defaults" type="button">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>
-          <span>Reset</span>
-        </button>
-        <a class="nav-link" href="/docs" target="_blank" rel="noreferrer">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1-2.5-2.5Z"/><path d="M6 6h10"/><path d="M6 10h10"/></svg>
-          <span>API Docs</span>
-        </a>
-      </div>
-    </header>
-
-    <!-- Main Workspace Studio -->
-    <main id="main" class="studio-grid">
-
-      <!-- Left Sidebar: Configuration & Presets -->
-      <aside class="sidebar-col">
-        <div class="panel-card config-card">
-          <div class="section-header">
-            <div class="section-icon">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
-            </div>
-            <div>
-              <h3 class="section-title">Workflow Presets</h3>
-              <p class="section-sub">Production patterns & guardrails</p>
-            </div>
-          </div>
-
-          <div class="form-group">
-            <label class="input-label" for="example-select">Industry Template</label>
-            <div class="select-wrapper">
-              <select id="example-select" class="form-select"></select>
-            </div>
-            <p id="example-description" class="field-hint"></p>
-          </div>
-
-          <div class="sidebar-divider"></div>
-
-          <div class="section-header">
-            <div class="section-icon">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="18" height="18" x="3" y="3" rx="2"/><path d="m9 8 3 3-3 3"/><path d="m15 16H9"/></svg>
-            </div>
-            <div>
-              <h3 class="section-title">Engine Runtime</h3>
-              <p class="section-sub">Model & inference adapter</p>
-            </div>
-          </div>
-
-          <div class="form-group">
-            <label class="input-label">Inference Engine</label>
-            <div class="hardware-engine-badge">
-              <div class="engine-badge-top">
-                <span class="engine-badge-dot"></span>
-                <span class="engine-badge-title">Native CUDA Engine</span>
-                <span class="engine-badge-tag">100% LOCAL</span>
-              </div>
-              <div class="engine-badge-desc">Direct llama.cpp C-API · Flash Attention · Zero Network</div>
-            </div>
-            <select id="mode-select" style="display: none;">
-              <option value="native" selected>Native CUDA</option>
-            </select>
-          </div>
-
-          <div class="form-group">
-            <label id="model-label" class="input-label" for="model-input">Model Weights Path</label>
-            <input id="model-input" class="form-input code-font" value="models\Qwen3-1.7B-Q8_0.gguf" autocomplete="off" spellcheck="false">
-            <p id="model-helper" class="field-hint">Path to 100% offline local GGUF model file on disk.</p>
-          </div>
-
-          <div class="form-group">
-            <div class="label-split">
-              <label class="input-label" for="temperature-input">Temperature</label>
-              <span id="temp-val" class="pill-value">0.0 (Argmax)</span>
-            </div>
-            <input type="range" id="temperature-input" min="0" max="1" step="0.05" value="0.0" class="slider-input">
-            <p class="field-hint">0.0 guarantees deterministic, calibrated discrete choices.</p>
-          </div>
-
-          <div class="sidebar-divider"></div>
-
-          <!-- Primitives Reference Card -->
-          <div class="primitives-card">
-            <div class="primitive-header">
-              <span class="sub-heading">Jev System One Primitives</span>
-            </div>
-            <div class="primitive-item">
-              <span class="badge noul-badge">Noul</span>
-              <span class="primitive-desc">Boolean probability (True/False gate)</span>
-            </div>
-            <div class="primitive-item">
-              <span class="badge choice-badge">Choice</span>
-              <span class="primitive-desc">Categorical distribution over rubrics</span>
-            </div>
-            <div class="primitive-item">
-              <span class="badge score-badge">Score</span>
-              <span class="primitive-desc">Bounded scalar rating & severity</span>
-            </div>
-            <div class="primitive-item">
-              <span class="badge text-badge">Text</span>
-              <span class="primitive-desc">Conditioned concise guided generation</span>
-            </div>
-          </div>
-        </div>
-      </aside>
-
-      <!-- Center Studio Column: Context Input & Workflow Builder -->
-      <section class="studio-col">
-        <!-- Context Card -->
-        <div class="panel-card context-panel">
-          <div class="panel-header">
-            <div class="panel-heading-left">
-              <span class="step-num">01</span>
-              <div>
-                <h2 class="panel-title">Input Context</h2>
-                <p class="panel-sub">Raw state, user request, document chunk, or command</p>
-              </div>
-            </div>
-            <div class="panel-actions">
-              <button id="clear-context-btn" class="icon-text-btn" type="button" title="Clear context">
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
-                Clear
+      <!-- Context Input Card -->
+      <div class="card context-card">
+        <textarea id="context-input" class="context-textarea" spellcheck="false" placeholder="Type a command, question, or provide context..."></textarea>
+        
+        <div class="context-actions-bar">
+          <div class="context-actions-left">
+            <div class="dropdown-wrapper">
+              <button id="add-context-btn" class="btn btn-outline btn-sm" type="button">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M12 5v14M5 12h14"/>
+                </svg>
+                <span>Add Context</span>
               </button>
-            </div>
-          </div>
-
-          <div class="textarea-container">
-            <textarea id="context-input" class="modern-textarea" rows="4" spellcheck="true" placeholder="Paste incoming request, state object, terminal command, or context text to evaluate..."></textarea>
-          </div>
-
-          <div class="card-footer">
-            <div class="footer-meta">
-              <span class="status-indicator"></span>
-              <span>Fed into all active workflow steps</span>
-            </div>
-            <div class="char-counter">
-              <span id="char-count">0</span> / 20,000 chars · <span id="token-estimate">~0 tokens</span>
-            </div>
-          </div>
-        </div>
-
-        <!-- Workflow Builder Card -->
-        <div class="panel-card workflow-panel">
-          <div class="panel-header">
-            <div class="panel-heading-left">
-              <span class="step-num">02</span>
-              <div>
-                <h2 class="panel-title">Decision Chain</h2>
-                <p class="panel-sub">Typed non-autoregressive decision steps & conditional gates</p>
-              </div>
-            </div>
-            <!-- Dual-Mode Tabs: Visual Builder vs JSON Code -->
-            <div class="segmented-control">
-              <button id="tab-visual" class="segment-btn active" type="button">
-                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="7" height="7" x="3" y="3" rx="1"/><rect width="7" height="7" x="14" y="3" rx="1"/><rect width="7" height="7" x="14" y="14" rx="1"/><rect width="7" height="7" x="3" y="14" rx="1"/></svg>
-                Visual Builder
-              </button>
-              <button id="tab-json" class="segment-btn" type="button">
-                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
-                JSON Schema
-              </button>
-            </div>
-          </div>
-
-          <!-- Tab 1: Visual Step Builder -->
-          <div id="view-visual" class="tab-content active">
-            <div id="visual-steps-list" class="visual-steps-container"></div>
-            <div class="builder-actions">
-              <button id="add-step-btn" class="secondary-btn" type="button">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 5v14M5 12h14"/></svg>
-                Add Decision Step
-              </button>
-              <div class="quick-add-group">
-                <span class="quick-label">Quick add:</span>
-                <button class="quick-add-chip" data-kind="noul">+ Noul Gate</button>
-                <button class="quick-add-chip" data-kind="choice">+ Choice Rubric</button>
-                <button class="quick-add-chip" data-kind="score">+ Score Metric</button>
+              <div id="context-snippets-menu" class="dropdown-menu">
+                <button class="dropdown-item" data-snippet="rm -rf /var/log/app/* &amp;&amp; drop database production_db;" type="button">Destructive Shell Command</button>
+                <button class="dropdown-item" data-snippet="Customer message: 'I was charged twice on invoice #48291. Please reverse duplicate charge immediately!'" type="button">Urgent Support Ticket</button>
+                <button class="dropdown-item" data-snippet="Health: 34, Ammo: 8, Enemies: 2 Revenants approaching at 30 degrees angle." type="button">Tactical ViZDoom State</button>
+                <button class="dropdown-item" data-snippet="User Query: 'How does Jev calibration work?' | Retrieved Doc: 'Jev applies empirical Platt temperature scaling over BoolQ validation benchmarks.'" type="button">RAG Verification Chunk</button>
               </div>
             </div>
           </div>
 
-          <!-- Tab 2: JSON Code Editor View -->
-          <div id="view-json" class="tab-content">
-            <div class="code-editor-wrap">
-              <textarea id="workflow-input" class="modern-code-area" rows="16" spellcheck="false"></textarea>
-            </div>
-            <div class="json-footer">
-              <span class="condition-hint">Use <code>"when": "step_id == value"</code> to conditionally execute or branch steps.</span>
-              <button id="format-button" class="action-link-btn" type="button">
-                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="4 7 4 4 20 4 20 7"/><line x1="9" y1="20" x2="15" y2="20"/><line x1="12" y1="4" x2="12" y2="20"/></svg>
-                Format JSON
-              </button>
-            </div>
-          </div>
-        </div>
-
-        <!-- Sticky Floating Run Action Bar -->
-        <div class="execution-bar">
-          <div class="run-status-block">
-            <div class="status-dot-pulse"></div>
-            <span id="run-message" class="run-status-text" role="status" aria-live="polite">Ready to evaluate</span>
-          </div>
-
-          <div class="run-action-wrap">
-            <span class="shortcut-pill">⌘ + Enter</span>
-            <button id="run-button" class="primary-run-btn" type="button">
-              <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"/></svg>
-              <span>Execute Workflow</span>
+          <div class="context-actions-right">
+            <button id="clear-btn" class="btn btn-outline btn-sm" type="button">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M18 6 6 18M6 6l12 12"/>
+              </svg>
+              <span>Clear</span>
+            </button>
+            <button id="run-btn" class="btn btn-primary" type="button">
+              <svg class="run-play-icon" width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
+                <polygon points="6 3 20 12 6 21 6 3"/>
+              </svg>
+              <span>Run</span>
             </button>
           </div>
         </div>
-      </section>
+      </div>
 
-      <!-- Right Column: Decision Intelligence & Telemetry -->
-      <aside class="results-col">
-        <div class="panel-card results-sticky-panel">
-          <div class="panel-header">
-            <div class="panel-heading-left">
-              <span class="step-num">03</span>
-              <div>
-                <h2 class="panel-title">Decision Output</h2>
-                <p class="panel-sub">Typed outputs, probabilities & trace</p>
+      <!-- Decision Chain Section -->
+      <div class="decision-chain-section">
+        <div class="section-title-row">
+          <div class="section-heading">
+            <div class="chain-icon-wrap">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="18" cy="5" r="3"/>
+                <circle cx="6" cy="12" r="3"/>
+                <circle cx="18" cy="19" r="3"/>
+                <line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/>
+                <line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/>
+              </svg>
+            </div>
+            <div>
+              <h2 class="section-title">Decision Chain</h2>
+              <p class="section-sub">Define evaluation steps and conditional logic.</p>
+            </div>
+          </div>
+
+          <div class="section-actions">
+            <button id="add-step-btn" class="btn btn-outline btn-sm" type="button">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <line x1="12" y1="5" x2="12" y2="19"/>
+                <line x1="5" y1="12" x2="19" y2="12"/>
+              </svg>
+              <span>Add Step</span>
+            </button>
+            <div class="dropdown-wrapper">
+              <button id="chain-options-btn" class="btn btn-outline btn-icon" type="button" title="Chain Options">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <circle cx="12" cy="12" r="1"/>
+                  <circle cx="19" cy="12" r="1"/>
+                  <circle cx="5" cy="12" r="1"/>
+                </svg>
+              </button>
+              <div id="chain-options-menu" class="dropdown-menu">
+                <button id="opt-reset-preset" class="dropdown-item" type="button">Reset to Current Preset</button>
+                <button id="opt-clear-steps" class="dropdown-item text-danger" type="button">Clear All Steps</button>
+                <button id="opt-export-json" class="dropdown-item" type="button">Copy Steps as JSON</button>
               </div>
             </div>
-            <span id="result-mode" class="runtime-badge">IDLE</span>
           </div>
-
-          <!-- Summary Metric Ribbon -->
-          <div id="telemetry-ribbon" class="telemetry-ribbon hidden">
-            <div class="ribbon-metric">
-              <span class="metric-label">Latency</span>
-              <span id="metric-latency" class="metric-val">—</span>
-            </div>
-            <div class="ribbon-metric">
-              <span class="metric-label">Steps Done</span>
-              <span id="metric-steps" class="metric-val">—</span>
-            </div>
-            <div class="ribbon-metric">
-              <span class="metric-label">Engine</span>
-              <span id="metric-engine" class="metric-val">—</span>
-            </div>
-          </div>
-
-          <!-- Secondary Tabs in Output Panel: Results vs Timeline vs Export -->
-          <div class="results-tabs">
-            <button id="res-tab-decisions" class="res-tab-btn active" type="button">Decisions</button>
-            <button id="res-tab-trace" class="res-tab-btn" type="button">Execution Trace</button>
-            <button id="res-tab-export" class="res-tab-btn" type="button">Code Export</button>
-          </div>
-
-          <!-- Empty State -->
-          <div id="result-empty" class="empty-state-card">
-            <div class="empty-icon-ring">
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><polygon points="12 2 2 7 12 12 22 7 12 2"/><polyline points="2 17 12 22 22 17"/><polyline points="2 12 12 17 22 12"/></svg>
-            </div>
-            <h4>No decisions evaluated yet</h4>
-            <p>Click "Execute Workflow" or press <code>⌘+Enter</code> to run the decision chain through the local Jev engine.</p>
-          </div>
-
-          <!-- View A: Decisions List -->
-          <div id="res-view-decisions" class="res-view active">
-            <div id="outputs-list" class="outputs-container"></div>
-          </div>
-
-          <!-- View B: Execution Trace -->
-          <div id="res-view-trace" class="res-view">
-            <div id="trace-list" class="trace-container"></div>
-          </div>
-
-          <!-- View C: Code Export -->
-          <div id="res-view-export" class="res-view">
-            <div class="export-container">
-              <div class="export-header">
-                <span class="sub-heading">cURL Terminal Command</span>
-                <button id="copy-curl-btn" class="copy-chip" type="button">Copy cURL</button>
-              </div>
-              <pre class="code-snippet"><code id="curl-code"></code></pre>
-
-              <div class="export-header" style="margin-top: 14px;">
-                <span class="sub-heading">Python SDK (requests / httpx)</span>
-                <button id="copy-py-btn" class="copy-chip" type="button">Copy Python</button>
-              </div>
-              <pre class="code-snippet"><code id="python-code"></code></pre>
-            </div>
-          </div>
-
         </div>
-      </aside>
 
+        <!-- Dynamic List of Step Cards -->
+        <div id="visual-steps-list" class="steps-stack">
+          <!-- Step cards will be injected by JavaScript -->
+        </div>
+      </div>
     </main>
 
-    <!-- App Footer -->
-    <footer class="app-footer">
-      <div class="footer-left">
-        <span class="privacy-lock-icon">
-          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
-        </span>
-        <span>100% Offline & Private — In-memory GPU logits never leave this machine</span>
+    <!-- =========================================================================
+         RIGHT SIDEBAR (OUTPUT & PRESETS)
+         ========================================================================= -->
+    <aside class="sidebar-right">
+      <!-- 1. Decision Output Card -->
+      <div class="card output-card">
+        <div class="output-card-header">
+          <div class="output-header-left">
+            <svg class="output-header-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <line x1="18" y1="20" x2="18" y2="10"/>
+              <line x1="12" y1="20" x2="12" y2="4"/>
+              <line x1="6" y1="20" x2="6" y2="14"/>
+            </svg>
+            <div>
+              <h3 class="card-title">Decision Output</h3>
+              <p class="card-sub">Model decisions, probabilities and trace</p>
+            </div>
+          </div>
+          <span id="output-status-badge" class="status-badge idle">IDLE</span>
+        </div>
+
+        <!-- Output Content: Empty state or populated results -->
+        <div id="output-content" class="output-card-content">
+          <!-- Empty State matching reference -->
+          <div id="output-empty-state" class="output-empty-state">
+            <div class="empty-icon-circle">
+              <!-- 3 Stacked Discs / Layers Icon -->
+              <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#94A3B8" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                <polygon points="12 2 2 7 12 12 22 7 12 2"/>
+                <polyline points="2 17 12 22 22 17"/>
+                <polyline points="2 12 12 17 22 12"/>
+              </svg>
+            </div>
+            <h4 class="empty-title">No decisions yet</h4>
+            <p class="empty-subtitle">Run the workflow to see model outputs, probabilities and execution trace.</p>
+          </div>
+
+          <!-- Populated Decision Results -->
+          <div id="output-results-wrapper" class="output-results-wrapper" style="display: none;">
+            <div id="output-meta-banner" class="output-meta-banner">
+              <span id="meta-latency" class="meta-tag latency">312 ms</span>
+              <span id="meta-profile" class="meta-tag profile">fast (Qwen3-1.7B)</span>
+              <span id="meta-steps" class="meta-tag steps">3 steps</span>
+            </div>
+
+            <div id="output-decisions-list" class="output-decisions-list">
+              <!-- Injected by app.js -->
+            </div>
+
+            <!-- View Trace / JSON toggle -->
+            <div class="output-footer-actions">
+              <button id="toggle-trace-btn" class="btn btn-outline btn-xs" type="button">Show Execution Trace &amp; JSON</button>
+            </div>
+
+            <div id="trace-details-panel" class="trace-details-panel" style="display: none;">
+              <pre id="raw-json-output" class="raw-code-block"></pre>
+            </div>
+          </div>
+        </div>
       </div>
-      <div class="footer-right">
-        <span>Jev System One · Native CUDA Qwen 1.7B</span>
+
+      <!-- 2. Workflow Preset Card -->
+      <div class="card preset-card">
+        <div class="preset-card-header">
+          <svg class="preset-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+            <polyline points="14 2 14 8 20 8"/>
+            <line x1="16" y1="13" x2="8" y2="13"/>
+            <line x1="16" y1="17" x2="8" y2="17"/>
+          </svg>
+          <div>
+            <h3 class="card-title">Workflow Preset</h3>
+            <p class="card-sub">Load a template to get started.</p>
+          </div>
+        </div>
+
+        <div class="preset-select-wrap">
+          <select id="preset-select" class="form-select custom-preset-select">
+            <!-- Populated dynamically from examples -->
+          </select>
+          <svg class="select-chevron" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polyline points="6 9 12 15 18 9"/>
+          </svg>
+        </div>
       </div>
-    </footer>
+
+      <!-- 3. Quick Actions Card -->
+      <div class="card quick-actions-card">
+        <div class="quick-header">
+          <svg class="quick-header-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>
+          </svg>
+          <div>
+            <h3 class="card-title">Quick Actions</h3>
+            <p class="card-sub">Common tasks and examples.</p>
+          </div>
+        </div>
+
+        <div class="quick-actions-list">
+          <!-- Action 1: Load Example -->
+          <button id="qa-load-example" class="quick-action-item" type="button">
+            <div class="qa-item-left">
+              <div class="qa-icon-wrap">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                  <polyline points="7 10 12 15 17 10"/>
+                  <line x1="12" y1="15" x2="12" y2="3"/>
+                </svg>
+              </div>
+              <div class="qa-item-text">
+                <span class="qa-item-title">Load Example</span>
+                <span class="qa-item-sub">Try a sample command</span>
+              </div>
+            </div>
+            <svg class="qa-chevron" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <polyline points="9 18 15 12 9 6"/>
+            </svg>
+          </button>
+
+          <!-- Action 2: Export Workflow -->
+          <button id="qa-export-workflow" class="quick-action-item" type="button">
+            <div class="qa-item-left">
+              <div class="qa-icon-wrap">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                  <polyline points="17 8 12 3 7 8"/>
+                  <line x1="12" y1="3" x2="12" y2="15"/>
+                </svg>
+              </div>
+              <div class="qa-item-text">
+                <span class="qa-item-title">Export Workflow</span>
+                <span class="qa-item-sub">Save as JSON</span>
+              </div>
+            </div>
+            <svg class="qa-chevron" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <polyline points="9 18 15 12 9 6"/>
+            </svg>
+          </button>
+
+          <!-- Action 3: View Logs -->
+          <button id="qa-view-logs" class="quick-action-item" type="button">
+            <div class="qa-item-left">
+              <div class="qa-icon-wrap">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                  <polyline points="14 2 14 8 20 8"/>
+                  <line x1="16" y1="13" x2="8" y2="13"/>
+                  <line x1="16" y1="17" x2="8" y2="17"/>
+                </svg>
+              </div>
+              <div class="qa-item-text">
+                <span class="qa-item-title">View Logs</span>
+                <span class="qa-item-sub">See recent executions</span>
+              </div>
+            </div>
+            <svg class="qa-chevron" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <polyline points="9 18 15 12 9 6"/>
+            </svg>
+          </button>
+        </div>
+      </div>
+    </aside>
   </div>
 
-  <script src="/static/app.js?v=3" defer></script>
+  <!-- =========================================================================
+       MODALS & DRAWERS (FOR 100% FUNCTIONAL INTERACTION)
+       ========================================================================= -->
+
+  <!-- 1. Models & Hardware Modal -->
+  <div id="modal-models" class="modal-backdrop" style="display: none;">
+    <div class="modal-panel">
+      <div class="modal-header">
+        <div class="modal-header-text">
+          <h3 class="modal-title">Model Profile &amp; Hardware Engine</h3>
+          <p class="modal-sub">Dual-model architecture with automatic VRAM eviction</p>
+        </div>
+        <button class="modal-close-btn" data-close="modal-models" type="button">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div class="profile-cards-grid">
+          <!-- Fast Profile Card -->
+          <div id="profile-card-fast" class="profile-select-card selected" data-profile="fast">
+            <div class="profile-card-top">
+              <span class="profile-badge fast">FAST MODE</span>
+              <span class="profile-latency">~312 ms p50</span>
+            </div>
+            <h4 class="profile-model-name">Qwen3-1.7B-Q8_0</h4>
+            <p class="profile-model-desc">Ultra-low latency categorical classification &amp; guardrails. Fits comfortably in 2.2 GB VRAM.</p>
+            <div class="profile-meta-row">
+              <span>Size: 1.71 GB</span>
+              <span>Temp: 9.4705 (BoolQ)</span>
+            </div>
+          </div>
+
+          <!-- Accuracy Profile Card -->
+          <div id="profile-card-accuracy" class="profile-select-card" data-profile="accuracy">
+            <div class="profile-card-top">
+              <span class="profile-badge accuracy">ACCURACY MODE</span>
+              <span class="profile-latency">~436 ms p50</span>
+            </div>
+            <h4 class="profile-model-name">Qwen3.5-4B-Q4_K_M</h4>
+            <p class="profile-model-desc">Deep semantic discernment: 93.06% JevBench Original, 100% on routing. Fits in 3.1 GB VRAM.</p>
+            <div class="profile-meta-row">
+              <span>Size: 2.55 GB</span>
+              <span>Temp: 1.2364 (Held-Out)</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="hardware-spec-box">
+          <div class="spec-row">
+            <span class="spec-label">Target Hardware:</span>
+            <span class="spec-val">NVIDIA GeForce RTX 3050 Laptop GPU (4,095 MiB VRAM)</span>
+          </div>
+          <div class="spec-row">
+            <span class="spec-label">Dynamic Pool Eviction:</span>
+            <span class="spec-val text-success">Enabled (Zero OOM guarantee on profile switch)</span>
+          </div>
+          <div class="spec-row">
+            <span class="spec-label">Native Backend:</span>
+            <span class="spec-val">llama.cpp C-API (ctypes logits inspection)</span>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-outline" data-close="modal-models" type="button">Close</button>
+        <button id="apply-profile-btn" class="btn btn-primary" type="button">Apply Active Profile</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 2. Workflows & Templates Modal -->
+  <div id="modal-workflows" class="modal-backdrop" style="display: none;">
+    <div class="modal-panel modal-lg">
+      <div class="modal-header">
+        <div class="modal-header-text">
+          <h3 class="modal-title">Workflow Templates Library</h3>
+          <p class="modal-sub">Battle-tested production guardrails, routers, and evaluators</p>
+        </div>
+        <button class="modal-close-btn" data-close="modal-workflows" type="button">&times;</button>
+      </div>
+      <div id="workflows-gallery-list" class="modal-body template-cards-grid">
+        <!-- Injected dynamically by app.js from examples -->
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-outline" data-close="modal-workflows" type="button">Cancel</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 3. Logs & History Modal -->
+  <div id="modal-logs" class="modal-backdrop" style="display: none;">
+    <div class="modal-panel modal-lg">
+      <div class="modal-header">
+        <div class="modal-header-text">
+          <h3 class="modal-title">Execution History &amp; Decision Logs</h3>
+          <p class="modal-sub">Auditable record of all local decisions run this session</p>
+        </div>
+        <button class="modal-close-btn" data-close="modal-logs" type="button">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div id="logs-history-container" class="logs-history-container">
+          <!-- Populated by app.js from localStorage -->
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button id="clear-logs-btn" class="btn btn-outline" type="button">Clear History</button>
+        <button class="btn btn-primary" data-close="modal-logs" type="button">Done</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 4. Settings Modal -->
+  <div id="modal-settings" class="modal-backdrop" style="display: none;">
+    <div class="modal-panel">
+      <div class="modal-header">
+        <div class="modal-header-text">
+          <h3 class="modal-title">Engine Configuration</h3>
+          <p class="modal-sub">Inference parameters, prompt formatting, and endpoints</p>
+        </div>
+        <button class="modal-close-btn" data-close="modal-settings" type="button">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div class="form-field-group">
+          <label class="form-label" for="setting-temperature">Evaluation Temperature (Discrete Argmax: 0.0)</label>
+          <div class="slider-val-row">
+            <input id="setting-temperature" type="range" min="0" max="1" step="0.05" value="0.0" class="range-slider">
+            <span id="setting-temp-val" class="slider-display">0.0 (Argmax)</span>
+          </div>
+          <p class="form-hint">Temperature = 0.0 guarantees mathematically deterministic, calibrated choices.</p>
+        </div>
+
+        <div class="form-field-group">
+          <label class="form-label" for="setting-model-path">Custom Model Weights Path</label>
+          <input id="setting-model-path" class="form-input code-font" value="models\Qwen3-1.7B-Q8_0.gguf">
+          <p class="form-hint">Path to 100% offline local GGUF model file on disk.</p>
+        </div>
+
+        <div class="form-field-group">
+          <label class="form-label">Active Platform</label>
+          <div class="platform-chip-row">
+            <span class="platform-chip active">Windows x86_64 (Native CUDA)</span>
+            <span class="platform-chip disabled">Linux (Planned)</span>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-outline" data-close="modal-settings" type="button">Cancel</button>
+        <button id="save-settings-btn" class="btn btn-primary" type="button">Save Settings</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Hidden elements for backward-compatibility with app.js functions if needed -->
+  <textarea id="workflow-input" style="display: none;"></textarea>
+  <select id="mode-select" style="display: none;"><option value="native" selected>Native</option></select>
+  <input id="model-input" type="hidden" value="models\Qwen3-1.7B-Q8_0.gguf">
+  <input id="temperature-input" type="hidden" value="0.0">
+
+  <script src="/static/app.js?v=4"></script>
 </body>
 </html>

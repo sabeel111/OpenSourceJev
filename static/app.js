@@ -1,11 +1,6 @@
 /**
- * Jev System One — Modern Corporate Startup Client Controller
- * Features:
- * - Dual-Mode Workflow Creation: Interactive Visual Builder + JSON Schema Sync
- * - Live Native CUDA Hardware Telemetry & Calibrated Logits Inspection
- * - Rich Decision Primitive Visualizers (Noul gauges, Choice logit distributions, Score meters)
- * - 1-Click Code Exporter (cURL & Python SDK)
- * - Global Keyboard Shortcuts (⌘+Enter / Ctrl+Enter)
+ * Jev — Client Controller
+ * Pixel-accurate UI Controller matching the reference SaaS interface
  */
 
 const state = {
@@ -13,26 +8,31 @@ const state = {
   activeExample: null,
   workflow: [],
   lastResponse: null,
-  activeTab: "visual",
-  activeResultTab: "decisions",
+  activeProfile: "fast",
+  modelPath: "models\\Qwen3-1.7B-Q8_0.gguf",
+  temperature: 0.0,
+  logs: [],
+  currentExampleIndex: 0,
 };
 
 const $ = (id) => document.getElementById(id);
 
-// Elements
+// Core Elements
 const contextInput = $("context-input");
-const workflowInput = $("workflow-input");
-const exampleSelect = $("example-select");
-const modeSelect = $("mode-select");
-const modelInput = $("model-input");
-const temperatureInput = $("temperature-input");
-const tempVal = $("temp-val");
-const runButton = $("run-button");
+const presetSelect = $("preset-select");
 const visualStepsList = $("visual-steps-list");
-const bundledNativeModel = "models\\Qwen3-1.7B-Q8_0.gguf";
+const runButton = $("run-btn");
+const clearButton = $("clear-btn");
+const addContextButton = $("add-context-btn");
+const contextSnippetsMenu = $("context-snippets-menu");
+const chainOptionsButton = $("chain-options-btn");
+const chainOptionsMenu = $("chain-options-menu");
+const themeToggleButton = $("theme-toggle-btn");
+const themeSunIcon = $("theme-sun-icon");
+const themeMoonIcon = $("theme-moon-icon");
 
 /* ==========================================================================
-   Helper Utilities
+   Utilities
    ========================================================================== */
 
 function escapeHtml(value) {
@@ -41,49 +41,51 @@ function escapeHtml(value) {
   }[char]));
 }
 
-function pretty(value) {
-  if (typeof value === "boolean") return value ? "true" : "false";
-  if (value === null || value === undefined) return "—";
-  return typeof value === "string" ? value : JSON.stringify(value);
+function loadTheme() {
+  const saved = localStorage.getItem("jev_theme") || "light";
+  if (saved === "dark") {
+    document.documentElement.classList.add("dark");
+    themeSunIcon.style.display = "none";
+    themeMoonIcon.style.display = "block";
+  } else {
+    document.documentElement.classList.remove("dark");
+    themeSunIcon.style.display = "block";
+    themeMoonIcon.style.display = "none";
+  }
 }
 
-function updateCharAndTokenCount() {
-  const chars = contextInput.value.length;
-  $("char-count").textContent = chars.toLocaleString();
-  const approxTokens = Math.max(1, Math.round(chars / 4));
-  $("token-estimate").textContent = chars ? `~${approxTokens.toLocaleString()} tokens` : "~0 tokens";
+function toggleTheme() {
+  const isDark = document.documentElement.classList.toggle("dark");
+  localStorage.setItem("jev_theme", isDark ? "dark" : "light");
+  themeSunIcon.style.display = isDark ? "none" : "block";
+  themeMoonIcon.style.display = isDark ? "block" : "none";
 }
 
-function setRunStatus(message, tone = "") {
-  const target = $("run-message");
-  target.textContent = message;
-  target.className = `run-status-text ${tone}`;
-}
-
-/* ==========================================================================
-   Visual Workflow Builder <-> JSON Bidirectional Sync
-   ========================================================================== */
-
-function syncWorkflowToVisual() {
+function loadLogsFromStorage() {
   try {
-    const parsed = JSON.parse(workflowInput.value);
-    if (Array.isArray(parsed)) {
-      state.workflow = parsed;
-      renderVisualSteps();
-    }
+    state.logs = JSON.parse(localStorage.getItem("jev_logs") || "[]");
+  } catch (_) {
+    state.logs = [];
+  }
+}
+
+function saveLogRecord(record) {
+  state.logs.unshift(record);
+  if (state.logs.length > 50) state.logs = state.logs.slice(0, 50);
+  try {
+    localStorage.setItem("jev_logs", JSON.stringify(state.logs));
   } catch (_) {}
 }
 
-function syncVisualToWorkflow() {
-  workflowInput.value = JSON.stringify(state.workflow, null, 2);
-  updateExportSnippets();
-}
+/* ==========================================================================
+   Decision Chain Steps Rendering & Drag/Reorder/Delete
+   ========================================================================== */
 
 function renderVisualSteps() {
   if (!state.workflow.length) {
     visualStepsList.innerHTML = `
-      <div style="padding: 24px; text-align: center; color: var(--text-muted); font-size: 12px;">
-        No decision steps configured. Click "+ Add Decision Step" below.
+      <div style="padding: 28px; text-align: center; color: var(--text-muted); font-size: 13px; background: var(--bg-card); border: 1px dashed var(--border-card); border-radius: var(--radius-lg);">
+        No decision steps configured. Click "+ Add Step" to define an evaluation condition.
       </div>
     `;
     return;
@@ -94,26 +96,34 @@ function renderVisualSteps() {
     const isChoice = kind === "choice";
     const isScore = kind === "score";
     const optionsStr = Array.isArray(step.options) ? step.options.join(", ") : "";
+    const orderStr = index < 9 ? `0${index + 1}` : `${index + 1}`;
 
     return `
-      <div class="visual-step-card" data-index="${index}">
-        <div class="step-card-header">
-          <div class="step-card-meta">
-            <span class="step-order-badge">0${index + 1}</span>
-            <input class="step-id-input" type="text" value="${escapeHtml(step.id || `step_${index + 1}`)}" 
-                   placeholder="step_id" data-field="id" title="Unique identifier for this decision step">
-            <select class="step-kind-select" data-field="kind">
-              <option value="noul" ${kind === "noul" ? "selected" : ""}>Noul (Boolean)</option>
-              <option value="choice" ${kind === "choice" ? "selected" : ""}>Choice (Categorical)</option>
-              <option value="score" ${kind === "score" ? "selected" : ""}>Score (Metric)</option>
-              <option value="text" ${kind === "text" ? "selected" : ""}>Text (Generation)</option>
-            </select>
-          </div>
-          <div class="step-actions">
-            ${index > 0 ? `<button class="step-btn-icon move-up-btn" type="button" title="Move Up">↑</button>` : ""}
-            ${index < state.workflow.length - 1 ? `<button class="step-btn-icon move-down-btn" type="button" title="Move Down">↓</button>` : ""}
-            <button class="step-btn-icon delete-step-btn" type="button" title="Delete Step">
-              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+      <div class="step-card" data-index="${index}">
+        <div class="step-row-top">
+          <span class="step-order-badge">${orderStr}</span>
+          
+          <input class="step-id-input" type="text" value="${escapeHtml(step.id || `step_${index + 1}`)}" 
+                 data-field="id" placeholder="step_id" title="Unique identifier for this step">
+
+          <select class="step-kind-select" data-field="kind">
+            <option value="noul" ${kind === "noul" ? "selected" : ""}>Noul (Boolean)</option>
+            <option value="choice" ${kind === "choice" ? "selected" : ""}>Choice (Categorical)</option>
+            <option value="score" ${kind === "score" ? "selected" : ""}>Score (Metric)</option>
+            <option value="text" ${kind === "text" ? "selected" : ""}>Text (Generation)</option>
+          </select>
+
+          <div class="step-row-actions">
+            ${index > 0 ? `<button class="step-action-btn move-up-btn" type="button" title="Move Up">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="m18 15-6-6-6 6"/></svg>
+            </button>` : ""}
+            ${index < state.workflow.length - 1 ? `<button class="step-action-btn move-down-btn" type="button" title="Move Down">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="m6 9 6 6 6-6"/></svg>
+            </button>` : ""}
+            <button class="step-action-btn delete delete-step-btn" type="button" title="Delete Step">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+              </svg>
             </button>
           </div>
         </div>
@@ -122,20 +132,20 @@ function renderVisualSteps() {
                placeholder="Question or evaluation rubric for Jev..." data-field="prompt">
 
         <div class="step-extra-row">
-          <input class="step-when-input" type="text" value="${escapeHtml(step.when || "")}" 
+          <input class="step-condition-input" type="text" value="${escapeHtml(step.when || "")}" 
                  placeholder='Condition (e.g. "urgent == true")' data-field="when">
 
           ${isChoice ? `
             <input class="step-options-input" type="text" value="${escapeHtml(optionsStr)}" 
-                   placeholder="Options (comma-separated, e.g. billing, technical, sales)" data-field="options">
+                   placeholder="Options (comma-separated, e.g. billing, technical, account)" data-field="options">
           ` : ""}
 
           ${isScore ? `
-            <div style="display: flex; align-items: center; gap: 6px;">
-              <span style="font-size: 10px; color: var(--text-muted);">Min:</span>
-              <input class="step-bounds-input" type="number" value="${step.min ?? 0}" data-field="min">
-              <span style="font-size: 10px; color: var(--text-muted);">Max:</span>
-              <input class="step-bounds-input" type="number" value="${step.max ?? 10}" data-field="max">
+            <div class="step-bounds-group">
+              <span>Min</span>
+              <input class="step-bound-input" type="number" value="${step.min ?? 1}" data-field="min">
+              <span>Max</span>
+              <input class="step-bound-input" type="number" value="${step.max ?? 5}" data-field="max">
             </div>
           ` : ""}
         </div>
@@ -147,7 +157,7 @@ function renderVisualSteps() {
 }
 
 function attachVisualStepListeners() {
-  visualStepsList.querySelectorAll(".visual-step-card").forEach((card) => {
+  visualStepsList.querySelectorAll(".step-card").forEach((card) => {
     const index = parseInt(card.dataset.index, 10);
 
     card.querySelectorAll("input, select").forEach((input) => {
@@ -160,7 +170,6 @@ function attachVisualStepListeners() {
           val = Number(val);
         }
         state.workflow[index][field] = val;
-        syncVisualToWorkflow();
         if (field === "kind") renderVisualSteps();
       });
     });
@@ -170,7 +179,6 @@ function attachVisualStepListeners() {
       deleteBtn.addEventListener("click", () => {
         state.workflow.splice(index, 1);
         renderVisualSteps();
-        syncVisualToWorkflow();
       });
     }
 
@@ -182,7 +190,6 @@ function attachVisualStepListeners() {
           state.workflow[index] = state.workflow[index - 1];
           state.workflow[index - 1] = temp;
           renderVisualSteps();
-          syncVisualToWorkflow();
         }
       });
     }
@@ -195,7 +202,6 @@ function attachVisualStepListeners() {
           state.workflow[index] = state.workflow[index + 1];
           state.workflow[index + 1] = temp;
           renderVisualSteps();
-          syncVisualToWorkflow();
         }
       });
     }
@@ -207,476 +213,522 @@ function addNewStep(kind = "noul") {
   const newStep = {
     id: `step_${count}`,
     kind,
-    prompt: kind === "noul" ? "Does this condition hold true?" : "Evaluate this input:",
+    prompt: kind === "noul" ? "Does this condition hold true?" : "Evaluate this state:",
   };
   if (kind === "choice") newStep.options = ["option_a", "option_b", "option_c"];
-  if (kind === "score") { newStep.min = 1; newStep.max = 10; }
+  if (kind === "score") { newStep.min = 1; newStep.max = 5; }
 
   state.workflow.push(newStep);
   renderVisualSteps();
-  syncVisualToWorkflow();
 
-  // Scroll to bottom of visual steps
+  // Scroll smoothly to newly added step
   visualStepsList.scrollTop = visualStepsList.scrollHeight;
 }
 
 /* ==========================================================================
-   Example Selection & Preset Loading
+   Presets & Examples Loading
    ========================================================================== */
 
 function selectExample(example) {
   state.activeExample = example;
   contextInput.value = example.context;
   state.workflow = JSON.parse(JSON.stringify(example.workflow));
-  workflowInput.value = JSON.stringify(example.workflow, null, 2);
-  $("example-description").textContent = example.description;
 
-  updateCharAndTokenCount();
-  renderVisualSteps();
-  clearResults();
-  setRunStatus("Ready to evaluate.");
-  updateExportSnippets();
-}
-
-function clearResults() {
-  state.lastResponse = null;
-  $("result-mode").textContent = "IDLE";
-  $("result-mode").className = "runtime-badge";
-  $("telemetry-ribbon").classList.add("hidden");
-  $("result-empty").style.display = "flex";
-  $("outputs-list").innerHTML = "";
-  $("trace-list").innerHTML = "";
-}
-
-/* ==========================================================================
-   Output Rendering & Telemetry
-   ========================================================================== */
-
-function renderResponse(response) {
-  state.lastResponse = response;
-  const isError = response.status === "error";
-  const mode = (response.meta?.mode || modeSelect.value).toUpperCase();
-
-  // Update badge and telemetry ribbon
-  $("result-mode").textContent = mode;
-  $("result-mode").className = `runtime-badge ${isError ? "" : "active-mode"}`;
-
-  $("telemetry-ribbon").classList.remove("hidden");
-  $("metric-latency").textContent = `${response.meta?.elapsed_ms ?? 0} ms`;
-  $("metric-steps").textContent = `${response.meta?.step_count ?? state.workflow.length}`;
-  $("metric-engine").textContent = mode;
-
-  $("result-empty").style.display = "none";
-
-  if (isError) {
-    $("outputs-list").innerHTML = `
-      <div style="padding: 16px; background: rgba(244, 63, 94, 0.08); border: 1px solid rgba(244, 63, 94, 0.25); border-radius: var(--radius-md);">
-        <strong style="color: var(--brand-rose); display: block; margin-bottom: 4px;">Evaluation Failed</strong>
-        <p style="font-size: 12px; color: var(--text-secondary);">${escapeHtml(response.error || "The workflow encountered an execution error.")}</p>
-      </div>
-    `;
-    return;
+  if (presetSelect.value !== example.id) {
+    presetSelect.value = example.id;
   }
 
-  // Render Decisions
-  const outputEntries = Object.entries(response.outputs || {});
-  $("outputs-list").innerHTML = outputEntries.length
-    ? outputEntries.map(([key, value]) => {
-      const trace = (response.trace || []).find((item) => item.id === key);
-      const kind = trace?.kind || "output";
-      const isNoul = kind === "noul";
-      const isChoice = kind === "choice";
-      const isScore = kind === "score";
+  renderVisualSteps();
+  resetOutputToIdle();
+}
 
-      let confidencePct = Math.round(Number(isNoul ? (trace?.noul ?? 0) : (trace?.confidence ?? 0)) * 100);
-      let gaugeHtml = "";
+function resetOutputToIdle() {
+  state.lastResponse = null;
+  $("output-status-badge").textContent = "IDLE";
+  $("output-status-badge").className = "status-badge idle";
+  $("output-empty-state").style.display = "flex";
+  $("output-results-wrapper").style.display = "none";
+  $("output-decisions-list").innerHTML = "";
+  $("trace-details-panel").style.display = "none";
+}
 
-      // 1. Noul Gauge
-      if (isNoul && trace?.noul != null) {
-        const noulPct = Math.round(trace.noul * 100);
-        gaugeHtml = `
-          <div style="margin-top: 10px;">
-            <div style="display: flex; justify-content: space-between; font-size: 11px; margin-bottom: 4px;">
-              <span style="color: var(--text-muted);">Calibrated Yes Probability</span>
-              <span style="font-family: var(--font-mono); font-weight: 700; color: var(--brand-green);">${noulPct}%</span>
-            </div>
-            <div class="noul-gauge-bar">
-              <div class="noul-gauge-fill" style="width: ${noulPct}%;"></div>
-            </div>
-          </div>
-        `;
-      }
+async function loadExamples() {
+  try {
+    const res = await fetch("/api/examples");
+    if (!res.ok) throw new Error("Could not load examples");
+    state.examples = await res.json();
 
-      // 2. Choice Candidates Distribution
-      if (isChoice && trace?.candidates?.length) {
-        gaugeHtml = `
-          <div class="candidate-table">
-            <span class="sub-heading" style="margin-bottom: 4px;">Candidate Distribution (Logits)</span>
-            ${trace.candidates.map((cand) => {
-              const candScore = Math.round(Number(cand.score || 0) * 100);
-              const isWinner = value === cand.value;
-              const rawScore = cand.raw_score != null ? `${Math.round(cand.raw_score * 100)}% raw` : "";
-              const label = cand.label && cand.label !== pretty(cand.value) ? `${pretty(cand.value)} (${cand.label})` : pretty(cand.value);
+    presetSelect.innerHTML = state.examples.map((ex) => `
+      <option value="${escapeHtml(ex.id)}">${escapeHtml(ex.name)}</option>
+    `).join("");
 
-              return `
-                <div class="candidate-row ${isWinner ? "winner" : ""}">
-                  <div class="candidate-row-top">
-                    <span class="candidate-name">${escapeHtml(label)}</span>
-                    <div class="candidate-score-block">
-                      ${rawScore ? `<span class="candidate-raw-tag">${rawScore}</span>` : ""}
-                      <span class="candidate-pct">${candScore}%</span>
-                    </div>
-                  </div>
-                  <div class="candidate-bar-bg">
-                    <div class="candidate-bar-fill" style="width: ${candScore}%;"></div>
-                  </div>
-                </div>
-              `;
-            }).join("")}
-          </div>
-        `;
-      }
+    renderWorkflowsGallery();
 
-      // 3. Score Metric Gauge
-      if (isScore) {
-        const stepDef = state.workflow.find((s) => s.id === key);
-        const minVal = stepDef?.min ?? 0;
-        const maxVal = stepDef?.max ?? 10;
-        const currentVal = Number(value);
-        const range = maxVal - minVal;
-        const scorePct = range > 0 ? Math.min(100, Math.max(0, Math.round(((currentVal - minVal) / range) * 100))) : 50;
-
-        gaugeHtml = `
-          <div style="margin-top: 10px;">
-            <div style="display: flex; justify-content: space-between; font-size: 11px; margin-bottom: 4px;">
-              <span style="color: var(--text-muted);">Scale (${minVal} to ${maxVal})</span>
-              <span style="font-family: var(--font-mono); font-weight: 700; color: var(--brand-amber);">${currentVal}</span>
-            </div>
-            <div class="noul-gauge-bar">
-              <div class="noul-gauge-fill" style="width: ${scorePct}%; background: linear-gradient(90deg, #F59E0B, #10B981);"></div>
-            </div>
-          </div>
-        `;
-      }
-
-      return `
-        <div class="decision-card">
-          <div class="decision-top">
-            <span class="decision-id">${escapeHtml(key)}</span>
-            <span class="decision-kind-pill ${kind}-badge">${escapeHtml(kind)}</span>
-          </div>
-          <div class="decision-value-row">
-            <span class="decision-val">${escapeHtml(pretty(value))}</span>
-            ${trace?.confidence != null ? `<span class="decision-confidence-tag">${confidencePct}% conf</span>` : ""}
-          </div>
-          ${gaugeHtml}
-        </div>
-      `;
-    }).join("")
-    : '<div style="padding: 20px; color: var(--text-muted); text-align: center;">No decision outputs produced.</div>';
-
-  // Render Trace Timeline
-  $("trace-list").innerHTML = (response.trace || []).map((item) => {
-    const isSkipped = item.status === "skipped";
-    const isErr = item.status === "error";
-    const statusClass = isSkipped ? "skipped" : (isErr ? "error" : "");
-
-    let detailStr = item.status;
-    if (item.status === "completed") {
-      detailStr = item.kind === "noul" && item.noul != null
-        ? `${Math.round(item.noul * 100)}% yes probability`
-        : `${Math.round((item.confidence || 0) * 100)}% confidence`;
-    } else if (item.detail) {
-      detailStr = item.detail;
+    if (state.examples.length) {
+      selectExample(state.examples[0]);
     }
+  } catch (err) {
+    console.error("Failed to load examples:", err);
+  }
+}
 
-    return `
-      <div class="trace-card">
-        <div class="trace-left">
-          <span class="trace-bullet ${statusClass}"></span>
-          <div>
-            <div class="trace-step-id">${escapeHtml(item.id)}</div>
-            <div class="trace-step-detail">${escapeHtml(detailStr)}</div>
-          </div>
-        </div>
-        <span class="trace-time-badge">${item.elapsed_ms || 0} ms</span>
-      </div>
-    `;
-  }).join("") || '<div style="padding: 20px; color: var(--text-muted); text-align: center;">No trace items.</div>';
+function renderWorkflowsGallery() {
+  const gallery = $("workflows-gallery-list");
+  if (!gallery) return;
 
-  updateExportSnippets();
+  gallery.innerHTML = state.examples.map((ex) => `
+    <div class="template-card" data-id="${escapeHtml(ex.id)}">
+      <h4 class="template-name">${escapeHtml(ex.name)}</h4>
+      <p class="template-desc">${escapeHtml(ex.description)}</p>
+      <span class="template-steps-count">${ex.workflow.length} evaluation steps &rarr;</span>
+    </div>
+  `).join("");
+
+  gallery.querySelectorAll(".template-card").forEach((card) => {
+    card.addEventListener("click", () => {
+      const id = card.dataset.id;
+      const found = state.examples.find((ex) => ex.id === id);
+      if (found) {
+        selectExample(found);
+        closeAllModals();
+      }
+    });
+  });
 }
 
 /* ==========================================================================
-   Code Exporter Generator (cURL & Python SDK)
-   ========================================================================== */
-
-function updateExportSnippets() {
-  const currentContext = contextInput.value;
-  const currentMode = modeSelect.value;
-  const currentModelPath = modelInput.value.trim();
-
-  const payload = {
-    context: currentContext,
-    workflow: state.workflow,
-    mode: currentMode,
-    model: currentMode === "native" ? null : currentModelPath,
-    model_path: currentMode === "native" ? currentModelPath : null,
-    temperature: parseFloat(temperatureInput.value) || 0.0,
-  };
-
-  const jsonPayload = JSON.stringify(payload, null, 2);
-
-  // 1. cURL
-  $("curl-code").textContent = `curl -X POST http://127.0.0.1:8000/api/run \\
-  -H "Content-Type: application/json" \\
-  -d '${jsonPayload.replace(/'/g, "'\\''")}'`;
-
-  // 2. Python SDK
-  $("python-code").textContent = `import httpx
-
-payload = ${jsonPayload}
-
-response = httpx.post("http://127.0.0.1:8000/api/run", json=payload, timeout=30.0)
-result = response.json()
-
-print("Status:", result["status"])
-print("Outputs:", result["outputs"])
-print("Latency:", result["meta"]["elapsed_ms"], "ms")`;
-}
-
-/* ==========================================================================
-   Execution & Engine Runner
+   Execution & Output Rendering
    ========================================================================== */
 
 async function runWorkflow() {
-  if (!contextInput.value.trim()) {
-    setRunStatus("Please provide input context before evaluating.", "error");
+  const context = contextInput.value.trim();
+  if (!context) {
+    alert("Please provide context or a command to evaluate.");
     contextInput.focus();
     return;
   }
 
   if (!state.workflow.length) {
-    setRunStatus("Add at least one decision step to the workflow.", "error");
+    alert("Please add at least one step in the Decision Chain.");
     return;
   }
 
+  // Set running state
+  $("output-status-badge").textContent = "RUNNING";
+  $("output-status-badge").className = "status-badge running";
   runButton.disabled = true;
   runButton.innerHTML = `
-    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" class="spinner">
+    <svg class="spinner" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
       <circle cx="12" cy="12" r="10" stroke-opacity="0.25"/>
-      <path d="M12 2a10 10 0 0 1 10 10"/>
+      <path d="M12 2a10 10 0 0 1 10 10" stroke-opacity="0.9"/>
     </svg>
     <span>Evaluating...</span>
   `;
 
-  setRunStatus("Evaluating native CUDA logits via llama.cpp...");
+  const payload = {
+    context,
+    workflow: state.workflow,
+    mode: "native",
+    profile: state.activeProfile,
+    model_path: state.modelPath,
+    temperature: state.temperature,
+  };
 
-  const t0 = performance.now();
+  const startTime = performance.now();
 
   try {
-    const payload = {
-      context: contextInput.value,
-      workflow: state.workflow,
-      mode: "native",
-      model: null,
-      model_path: modelInput.value.trim() || null,
-      temperature: parseFloat(temperatureInput.value) || 0.0,
-    };
-
     const res = await fetch("/api/run", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(payload),
     });
 
+    const elapsed = Math.round(performance.now() - startTime);
     const data = await res.json();
-    if (!res.ok) throw new Error(data.detail || "API rejected the request.");
 
-    renderResponse(data);
-    const ms = Math.round(performance.now() - t0);
-    setRunStatus(`Completed in ${data.meta?.elapsed_ms || ms} ms`, "success");
+    if (!res.ok) {
+      throw new Error(data.detail || data.error || "Workflow evaluation error");
+    }
 
+    renderResponse(data, elapsed);
+    saveLogRecord({
+      time: new Date().toLocaleTimeString(),
+      context: context.length > 60 ? context.substring(0, 60) + "..." : context,
+      status: "success",
+      latency: data.meta?.elapsed_ms || elapsed,
+      profile: state.activeProfile,
+      outputs: data.outputs,
+    });
   } catch (err) {
-    setRunStatus(err.message || "Failed to execute workflow.", "error");
-    renderResponse({ status: "error", error: err.message, meta: { mode: "native", elapsed_ms: Math.round(performance.now() - t0) } });
+    console.error("Run error:", err);
+    $("output-status-badge").textContent = "ERROR";
+    $("output-status-badge").className = "status-badge idle";
+    $("output-empty-state").style.display = "none";
+    $("output-results-wrapper").style.display = "block";
+    $("output-decisions-list").innerHTML = `
+      <div style="padding: 14px; background: rgba(239, 68, 68, 0.08); border: 1px solid rgba(239, 68, 68, 0.25); border-radius: var(--radius-md);">
+        <strong style="color: var(--brand-rose); font-size: 13px; display: block; margin-bottom: 4px;">Execution Error</strong>
+        <p style="font-size: 12px; color: var(--text-secondary);">${escapeHtml(err.message)}</p>
+      </div>
+    `;
   } finally {
     runButton.disabled = false;
     runButton.innerHTML = `
-      <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"/></svg>
-      <span>Execute Workflow</span>
+      <svg class="run-play-icon" width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
+        <polygon points="6 3 20 12 6 21 6 3"/>
+      </svg>
+      <span>Run</span>
     `;
   }
 }
 
+function renderResponse(response, clientElapsed) {
+  state.lastResponse = response;
+  const elapsed = response.meta?.elapsed_ms || clientElapsed;
+
+  $("output-status-badge").textContent = "COMPLETED";
+  $("output-status-badge").className = "status-badge completed";
+  $("pill-speed-text").textContent = `${elapsed}ms`;
+
+  $("output-empty-state").style.display = "none";
+  $("output-results-wrapper").style.display = "block";
+
+  // Meta Tags
+  $("meta-latency").textContent = `${elapsed} ms`;
+  $("meta-profile").textContent = response.meta?.profile ? `${response.meta.profile} mode` : state.activeProfile;
+  $("meta-steps").textContent = `${response.trace?.length || Object.keys(response.outputs || {}).length} decisions`;
+
+  const decisionsList = $("output-decisions-list");
+  const entries = Object.entries(response.outputs || {});
+
+  if (!entries.length) {
+    decisionsList.innerHTML = `
+      <div style="padding: 16px; text-align: center; color: var(--text-muted); font-size: 12px;">
+        All steps were skipped due to conditional criteria.
+      </div>
+    `;
+    return;
+  }
+
+  decisionsList.innerHTML = entries.map(([key, value]) => {
+    const trace = (response.trace || []).find((t) => t.id === key);
+    const kind = trace?.kind || "noul";
+    const isNoul = kind === "noul";
+    const isChoice = kind === "choice";
+    const isScore = kind === "score";
+
+    let valueDisplay = String(value);
+    let valueClass = "";
+    if (isNoul) {
+      valueDisplay = value ? "TRUE" : "FALSE";
+      valueClass = value ? "true" : "false";
+    }
+
+    let extraHtml = "";
+
+    // Noul probability gauge
+    if (isNoul && trace?.noul != null) {
+      const pct = Math.round(trace.noul * 100);
+      extraHtml = `
+        <div class="d-gauge-wrap">
+          <div style="display: flex; justify-content: space-between; font-size: 10.5px; margin-bottom: 2px;">
+            <span style="color: var(--text-muted);">Calibrated Yes Probability</span>
+            <span style="font-weight: 700; color: var(--brand-green);">${pct}%</span>
+          </div>
+          <div class="d-gauge-bar">
+            <div class="d-gauge-fill" style="width: ${pct}%;"></div>
+          </div>
+        </div>
+      `;
+    }
+
+    // Choice probabilities distribution
+    if (isChoice && Array.isArray(trace?.candidates)) {
+      extraHtml = `
+        <div style="margin-top: 8px;">
+          ${trace.candidates.map((c) => {
+            const cPct = Math.round((c.score || 0) * 100);
+            const isWinner = c.value === value;
+            return `
+              <div class="d-candidate-row">
+                <span style="color: ${isWinner ? 'var(--text-primary)' : 'var(--text-muted)'}; font-weight: ${isWinner ? '700' : '400'};">
+                  ${escapeHtml(c.value)}
+                </span>
+                <span style="font-family: var(--font-mono); color: ${isWinner ? 'var(--brand-green)' : 'var(--text-dim)'}; font-weight: ${isWinner ? '700' : '400'};">
+                  ${cPct}%
+                </span>
+              </div>
+              <div class="d-candidate-bar">
+                <div class="d-candidate-fill" style="width: ${cPct}%; opacity: ${isWinner ? '1' : '0.4'};"></div>
+              </div>
+            `;
+          }).join("")}
+        </div>
+      `;
+    }
+
+    // Score range indicator
+    if (isScore) {
+      extraHtml = `
+        <div style="display: flex; align-items: center; justify-content: space-between; margin-top: 6px; font-size: 10.5px; color: var(--text-muted);">
+          <span>Rubric expectation: <strong>${value}</strong></span>
+          <span style="font-family: var(--font-mono);">[${trace?.min ?? 1} &rarr; ${trace?.max ?? 5}]</span>
+        </div>
+      `;
+    }
+
+    return `
+      <div class="decision-result-card">
+        <div class="d-res-header">
+          <span class="d-res-id">${escapeHtml(key)}</span>
+          <span class="d-res-val ${valueClass}">${escapeHtml(valueDisplay)}</span>
+        </div>
+        ${extraHtml}
+      </div>
+    `;
+  }).join("");
+
+  // Populate raw JSON
+  $("raw-json-output").textContent = JSON.stringify(response, null, 2);
+}
+
 /* ==========================================================================
-   Initialization & Event Wiring
+   Modals & Drawers Management
    ========================================================================== */
 
-async function loadHealth() {
-  const pill = $("health-pill");
-  try {
-    const res = await fetch("/api/health");
-    const health = await res.json();
-    const nativeReady = health.native?.available && health.native?.cuda;
+function openModal(modalId) {
+  closeAllModals();
+  const modal = $(modalId);
+  if (modal) modal.style.display = "flex";
+}
 
-    pill.className = `telemetry-pill ${nativeReady ? "ready" : "warn"}`;
-    $("health-label").textContent = nativeReady
-      ? "CUDA Native Active (Qwen 1.7B)"
-      : health.native?.available
-        ? "Native CPU Active"
-        : "Engine Initializing";
+function closeAllModals() {
+  document.querySelectorAll(".modal-backdrop").forEach((m) => {
+    m.style.display = "none";
+  });
+}
 
-    if (health.native?.default_model) {
-      modelInput.value = health.native.default_model;
+function renderLogs() {
+  const container = $("logs-history-container");
+  if (!container) return;
+
+  if (!state.logs.length) {
+    container.innerHTML = `
+      <div style="padding: 24px; text-align: center; color: var(--text-muted); font-size: 12px;">
+        No workflow executions recorded yet this session.
+      </div>
+    `;
+    return;
+  }
+
+  container.innerHTML = state.logs.map((log) => `
+    <div class="log-item">
+      <div class="log-item-left">
+        <span class="log-time">${escapeHtml(log.time)} &bull; ${escapeHtml(log.profile)} profile</span>
+        <span class="log-context-snippet">${escapeHtml(log.context)}</span>
+      </div>
+      <div class="log-item-right">
+        <span class="log-badge" style="background: var(--brand-green-dim); color: #047857;">${log.latency}ms</span>
+      </div>
+    </div>
+  `).join("");
+}
+
+/* ==========================================================================
+   Event Listeners Wire-Up
+   ========================================================================== */
+
+function attachEventListeners() {
+  // Theme Toggle
+  themeToggleButton.addEventListener("click", toggleTheme);
+
+  // Nav item clicks
+  $("nav-playground").addEventListener("click", () => {
+    closeAllModals();
+    $("nav-playground").classList.add("active");
+  });
+
+  $("nav-workflows").addEventListener("click", () => openModal("modal-workflows"));
+  $("nav-templates").addEventListener("click", () => openModal("modal-workflows"));
+  $("nav-models").addEventListener("click", () => openModal("modal-models"));
+  $("nav-logs").addEventListener("click", () => {
+    renderLogs();
+    openModal("modal-logs");
+  });
+  $("nav-settings").addEventListener("click", () => openModal("modal-settings"));
+  $("engine-status-card").addEventListener("click", () => openModal("modal-models"));
+
+  // Modal Close buttons
+  document.querySelectorAll("[data-close]").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      const modalId = btn.dataset.close;
+      const target = $(modalId);
+      if (target) target.style.display = "none";
+    });
+  });
+
+  document.querySelectorAll(".modal-backdrop").forEach((backdrop) => {
+    backdrop.addEventListener("click", (e) => {
+      if (e.target === backdrop) backdrop.style.display = "none";
+    });
+  });
+
+  // Preset Select change
+  presetSelect.addEventListener("change", () => {
+    const found = state.examples.find((ex) => ex.id === presetSelect.value);
+    if (found) selectExample(found);
+  });
+
+  // Context Actions
+  clearButton.addEventListener("click", () => {
+    contextInput.value = "";
+    contextInput.focus();
+  });
+
+  addContextButton.addEventListener("click", (e) => {
+    e.stopPropagation();
+    contextSnippetsMenu.classList.toggle("show");
+  });
+
+  document.addEventListener("click", () => {
+    contextSnippetsMenu.classList.remove("show");
+    chainOptionsMenu.classList.remove("show");
+  });
+
+  contextSnippetsMenu.querySelectorAll(".dropdown-item").forEach((item) => {
+    item.addEventListener("click", () => {
+      contextInput.value = item.dataset.snippet;
+      contextSnippetsMenu.classList.remove("show");
+    });
+  });
+
+  // Decision Chain Header Actions
+  $("add-step-btn").addEventListener("click", () => addNewStep("noul"));
+
+  chainOptionsButton.addEventListener("click", (e) => {
+    e.stopPropagation();
+    chainOptionsMenu.classList.toggle("show");
+  });
+
+  $("opt-reset-preset").addEventListener("click", () => {
+    if (state.activeExample) selectExample(state.activeExample);
+    chainOptionsMenu.classList.remove("show");
+  });
+
+  $("opt-clear-steps").addEventListener("click", () => {
+    state.workflow = [];
+    renderVisualSteps();
+    chainOptionsMenu.classList.remove("show");
+  });
+
+  $("opt-export-json").addEventListener("click", () => {
+    navigator.clipboard.writeText(JSON.stringify(state.workflow, null, 2)).then(() => {
+      alert("Workflow JSON copied to clipboard!");
+    });
+    chainOptionsMenu.classList.remove("show");
+  });
+
+  // Run Button & Keyboard shortcut (Ctrl+Enter / Cmd+Enter)
+  runButton.addEventListener("click", runWorkflow);
+
+  document.addEventListener("keydown", (e) => {
+    if ((e.metaKey || e.ctrlKey) && e.key === "Enter") {
+      e.preventDefault();
+      runWorkflow();
     }
-  } catch (_) {
-    pill.className = "telemetry-pill warn";
-    $("health-label").textContent = "API offline";
-  }
+  });
+
+  // Trace / Raw JSON Toggle
+  $("toggle-trace-btn").addEventListener("click", () => {
+    const panel = $("trace-details-panel");
+    const isHidden = panel.style.display === "none";
+    panel.style.display = isHidden ? "block" : "none";
+    $("toggle-trace-btn").textContent = isHidden ? "Hide Execution Trace & JSON" : "Show Execution Trace & JSON";
+  });
+
+  // Quick Action 1: Load Example
+  $("qa-load-example").addEventListener("click", () => {
+    if (!state.examples.length) return;
+    state.currentExampleIndex = (state.currentExampleIndex + 1) % state.examples.length;
+    selectExample(state.examples[state.currentExampleIndex]);
+  });
+
+  // Quick Action 2: Export Workflow
+  $("qa-export-workflow").addEventListener("click", () => {
+    const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(state.workflow, null, 2));
+    const downloadAnchor = document.createElement("a");
+    downloadAnchor.setAttribute("href", dataStr);
+    downloadAnchor.setAttribute("download", `jev_workflow_${Date.now()}.json`);
+    document.body.appendChild(downloadAnchor);
+    downloadAnchor.click();
+    downloadAnchor.remove();
+  });
+
+  // Quick Action 3: View Logs
+  $("qa-view-logs").addEventListener("click", () => {
+    renderLogs();
+    openModal("modal-logs");
+  });
+
+  // Clear Logs
+  $("clear-logs-btn").addEventListener("click", () => {
+    state.logs = [];
+    localStorage.removeItem("jev_logs");
+    renderLogs();
+  });
+
+  // Model Profile Cards in Modal
+  const cardFast = $("profile-card-fast");
+  const cardAccuracy = $("profile-card-accuracy");
+
+  cardFast.addEventListener("click", () => {
+    cardFast.classList.add("selected");
+    cardAccuracy.classList.remove("selected");
+    state.activeProfile = "fast";
+    state.modelPath = "models\\Qwen3-1.7B-Q8_0.gguf";
+  });
+
+  cardAccuracy.addEventListener("click", () => {
+    cardAccuracy.classList.add("selected");
+    cardFast.classList.remove("selected");
+    state.activeProfile = "accuracy";
+    state.modelPath = "models\\qwen35-4b-q4km\\Qwen3.5-4B-Q4_K_M.gguf";
+  });
+
+  $("apply-profile-btn").addEventListener("click", () => {
+    $("sidebar-engine-desc").innerHTML = state.activeProfile === "fast" 
+      ? `CUDA (Local)<br>Qwen3-1.7B Fast` 
+      : `CUDA (Local)<br>Qwen3.5-4B Accuracy`;
+    closeAllModals();
+  });
+
+  // Settings Modal controls
+  const settingTemp = $("setting-temperature");
+  const settingTempVal = $("setting-temp-val");
+
+  settingTemp.addEventListener("input", (e) => {
+    const val = parseFloat(e.target.value);
+    settingTempVal.textContent = val === 0 ? "0.0 (Argmax)" : val.toFixed(2);
+    state.temperature = val;
+  });
+
+  $("save-settings-btn").addEventListener("click", () => {
+    const customPath = $("setting-model-path").value.trim();
+    if (customPath) state.modelPath = customPath;
+    closeAllModals();
+  });
 }
 
-async function loadExamples() {
-  try {
-    const res = await fetch("/api/examples");
-    const data = await res.json();
-    state.examples = data.examples || [];
-    exampleSelect.innerHTML = state.examples.map((ex) => 
-      `<option value="${escapeHtml(ex.id)}">${escapeHtml(ex.name)}</option>`
-    ).join("");
-
-    if (state.examples[0]) selectExample(state.examples[0]);
-  } catch (err) {
-    setRunStatus("Failed to load workflow examples.", "error");
-  }
-}
-
-// Event Listeners
-exampleSelect.addEventListener("change", () => {
-  const found = state.examples.find((ex) => ex.id === exampleSelect.value);
-  if (found) selectExample(found);
-});
-
-contextInput.addEventListener("input", () => {
-  updateCharAndTokenCount();
-  updateExportSnippets();
-});
-
-workflowInput.addEventListener("input", () => {
-  syncWorkflowToVisual();
-  updateExportSnippets();
-});
-
-$("format-button").addEventListener("click", () => {
-  try {
-    workflowInput.value = JSON.stringify(JSON.parse(workflowInput.value), null, 2);
-    syncWorkflowToVisual();
-    setRunStatus("Workflow JSON formatted.", "success");
-  } catch (_) {
-    setRunStatus("Invalid JSON syntax in workflow editor.", "error");
-  }
-});
-
-$("add-step-btn").addEventListener("click", () => addNewStep("noul"));
-
-document.querySelectorAll(".quick-add-chip").forEach((chip) => {
-  chip.addEventListener("click", () => {
-    addNewStep(chip.dataset.kind || "noul");
-  });
-});
-
-$("clear-context-btn").addEventListener("click", () => {
-  contextInput.value = "";
-  updateCharAndTokenCount();
-  contextInput.focus();
-});
-
-$("reset-btn").addEventListener("click", () => {
-  if (state.examples[0]) selectExample(state.examples[0]);
-});
-
-temperatureInput.addEventListener("input", (e) => {
-  tempVal.textContent = parseFloat(e.target.value) === 0 ? "0.0 (Argmax)" : parseFloat(e.target.value).toFixed(2);
-  updateExportSnippets();
-});
-
-
-
-// Tab Switchers: Visual Builder vs JSON
-$("tab-visual").addEventListener("click", () => {
-  $("tab-visual").classList.add("active");
-  $("tab-json").classList.remove("active");
-  $("view-visual").classList.add("active");
-  $("view-json").classList.remove("active");
-  syncWorkflowToVisual();
-});
-
-$("tab-json").addEventListener("click", () => {
-  $("tab-json").classList.add("active");
-  $("tab-visual").classList.remove("active");
-  $("view-json").classList.add("active");
-  $("view-visual").classList.remove("active");
-  syncVisualToWorkflow();
-});
-
-// Output Tab Switchers: Decisions vs Trace vs Export
-$("res-tab-decisions").addEventListener("click", () => {
-  $("res-tab-decisions").classList.add("active");
-  $("res-tab-trace").classList.remove("active");
-  $("res-tab-export").classList.remove("active");
-  $("res-view-decisions").classList.add("active");
-  $("res-view-trace").classList.remove("active");
-  $("res-view-export").classList.remove("active");
-});
-
-$("res-tab-trace").addEventListener("click", () => {
-  $("res-tab-trace").classList.add("active");
-  $("res-tab-decisions").classList.remove("active");
-  $("res-tab-export").classList.remove("active");
-  $("res-view-trace").classList.add("active");
-  $("res-view-decisions").classList.remove("active");
-  $("res-view-export").classList.remove("active");
-});
-
-$("res-tab-export").addEventListener("click", () => {
-  $("res-tab-export").classList.add("active");
-  $("res-tab-decisions").classList.remove("active");
-  $("res-tab-trace").classList.remove("active");
-  $("res-view-export").classList.add("active");
-  $("res-view-decisions").classList.remove("active");
-  $("res-view-trace").classList.remove("active");
-  updateExportSnippets();
-});
-
-// Copy Chips
-$("copy-curl-btn").addEventListener("click", () => {
-  navigator.clipboard.writeText($("curl-code").textContent).then(() => {
-    $("copy-curl-btn").textContent = "Copied!";
-    setTimeout(() => { $("copy-curl-btn").textContent = "Copy cURL"; }, 1500);
-  });
-});
-
-$("copy-py-btn").addEventListener("click", () => {
-  navigator.clipboard.writeText($("python-code").textContent).then(() => {
-    $("copy-py-btn").textContent = "Copied!";
-    setTimeout(() => { $("copy-py-btn").textContent = "Copy Python"; }, 1500);
-  });
-});
-
-// Keyboard Shortcut: Cmd/Ctrl + Enter runs workflow
-document.addEventListener("keydown", (e) => {
-  if ((e.metaKey || e.ctrlKey) && e.key === "Enter") {
-    e.preventDefault();
-    runWorkflow();
-  }
-});
-
-runButton.addEventListener("click", runWorkflow);
-
-// Spinner keyframe animation injection
+// Injected Spinner CSS
 const styleEl = document.createElement("style");
 styleEl.innerHTML = `@keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } } .spinner { animation: spin 0.8s linear infinite; }`;
 document.head.appendChild(styleEl);
 
-// Init
-Promise.all([loadExamples(), loadHealth()]);
+/* ==========================================================================
+   Initialization
+   ========================================================================== */
+
+loadTheme();
+loadLogsFromStorage();
+attachEventListeners();
+loadExamples();
