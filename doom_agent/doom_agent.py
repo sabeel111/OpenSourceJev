@@ -7,10 +7,12 @@ Supports both:
 """
 
 import argparse
+import json
 import math
 import os
 import sys
 import time
+import urllib.request
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
 
@@ -31,13 +33,24 @@ class JevDoomController:
         window_visible: bool = True,
         save_gif: bool = True,
         max_episodes: int = 1,
+        profile: str = "accuracy",
+        model_path: Optional[str] = None,
+        api_url: Optional[str] = "http://127.0.0.1:8000",
     ):
         self.scenario = scenario
         self.window_visible = window_visible
         self.save_gif = save_gif
         self.max_episodes = max_episodes
-        self.engine = NativeJevEngine()
-        self.model_path = str(PROJECT_ROOT / "models" / "Qwen3-1.7B-Q8_0.gguf")
+        self.profile = profile.lower()
+        self.api_url = api_url.rstrip("/") if api_url else None
+
+        # Resolve model path based on profile
+        if model_path:
+            self.model_path = str(Path(model_path).resolve())
+        elif self.profile == "accuracy":
+            self.model_path = str(PROJECT_ROOT / "models" / "qwen35-4b-q4km" / "Qwen3.5-4B-Q4_K_M.gguf")
+        else:
+            self.model_path = str(PROJECT_ROOT / "models" / "Qwen3-1.7B-Q8_0.gguf")
 
         # Resolve scenario config
         scenarios_dir = Path(vzd.__file__).parent / "scenarios"
@@ -49,6 +62,21 @@ class JevDoomController:
 
         # Check if scenario is a turning (360) or strafing scenario
         self.is_turning = "defend" in scenario or "corridor" in scenario
+
+        # Test if local OpenSourceJev server is responsive to share loaded model VRAM
+        self.use_api = False
+        if self.api_url:
+            try:
+                with urllib.request.urlopen(f"{self.api_url}/api/health", timeout=1.0) as res:
+                    if res.status == 200:
+                        self.use_api = True
+            except Exception:
+                self.use_api = False
+
+        if not self.use_api:
+            self.engine = NativeJevEngine()
+        else:
+            self.engine = None
 
     def create_game(self) -> vzd.DoomGame:
         game = vzd.DoomGame()
@@ -127,37 +155,61 @@ class JevDoomController:
         left_action = "turn_left" if self.is_turning else "strafe_left"
         right_action = "turn_right" if self.is_turning else "strafe_right"
 
-        request = RunRequest(
-            context=state_text,
-            mode="native",
-            model_path=self.model_path,
-            workflow=[
-                Step(
-                    id="action",
-                    kind="choice",
-                    prompt="Select the single tactical action to hit the target:",
-                    options=["shoot_weapon", left_action, right_action],
-                    criteria={
-                        "shoot_weapon": "Shoot and fire weapon when target is directly in crosshairs",
-                        left_action: f"{left_action.replace('_', ' ').capitalize()} to align crosshairs when target is on the left",
-                        right_action: f"{right_action.replace('_', ' ').capitalize()} to align crosshairs when target is on the right"
-                    }
-                )
-            ]
-        )
-        response = self.engine._run_sync(request)
-        action = response.outputs.get("action", "shoot_weapon")
-        confidence = 1.0
-        if response.trace and response.trace[0].confidence is not None:
-            confidence = response.trace[0].confidence
-        return action, confidence
+        step_data = {
+            "id": "action",
+            "kind": "choice",
+            "prompt": "Select the single tactical action to hit the target:",
+            "options": ["shoot_weapon", left_action, right_action],
+            "criteria": {
+                "shoot_weapon": "Shoot and fire weapon when target is directly in crosshairs",
+                left_action: f"{left_action.replace('_', ' ').capitalize()} to align crosshairs when target is on the left",
+                right_action: f"{right_action.replace('_', ' ').capitalize()} to align crosshairs when target is on the right"
+            }
+        }
+
+        if self.use_api:
+            payload = {
+                "context": state_text,
+                "mode": "native",
+                "profile": self.profile,
+                "model_path": self.model_path,
+                "workflow": [step_data]
+            }
+            req = urllib.request.Request(
+                f"{self.api_url}/api/run",
+                data=json.dumps(payload).encode("utf-8"),
+                headers={"Content-Type": "application/json"}
+            )
+            with urllib.request.urlopen(req, timeout=15.0) as resp:
+                data = json.loads(resp.read().decode("utf-8"))
+            action = data.get("outputs", {}).get("action", "shoot_weapon")
+            confidence = 1.0
+            trace = data.get("trace", [])
+            if trace and trace[0].get("confidence") is not None:
+                confidence = float(trace[0]["confidence"])
+            return action, confidence
+        else:
+            request = RunRequest(
+                context=state_text,
+                mode="native",
+                profile=self.profile,
+                model_path=self.model_path,
+                workflow=[Step(**step_data)]
+            )
+            response = self.engine._run_sync(request)
+            action = response.outputs.get("action", "shoot_weapon")
+            confidence = 1.0
+            if response.trace and response.trace[0].confidence is not None:
+                confidence = response.trace[0].confidence
+            return action, confidence
 
     def run(self):
         print("=" * 65)
-        print("   Jev DOOM Slayer Agent (Local Qwen3 Native Logits Engine)")
+        print("   OpenSourceJev DOOM Slayer Agent")
         print(f"   Scenario: {self.scenario}")
         print(f"   Mode: {'360° Circular Arena' if self.is_turning else 'Linear Hallway'}")
-        print(f"   Model: {Path(self.model_path).name}")
+        print(f"   Profile: {self.profile.upper()} ({Path(self.model_path).name})")
+        print(f"   Engine: {'Connected to local OpenSourceJev API' if self.use_api else 'Local In-Process Native Engine'}")
         print("=" * 65)
 
         game = self.create_game()
@@ -234,11 +286,22 @@ class JevDoomController:
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="Run Jev DOOM Agent")
+    parser = argparse.ArgumentParser(description="Run OpenSourceJev DOOM Agent")
     parser.add_argument(
         "--scenario",
         default="defend_the_center.cfg",
         help="ViZDoom scenario: 'defend_the_center.cfg' (continuous arena) or 'basic.cfg' (quick shot)"
+    )
+    parser.add_argument(
+        "--profile",
+        default="accuracy",
+        choices=["fast", "accuracy"],
+        help="Model profile: 'accuracy' (Qwen3.5-4B-Q4_K_M) or 'fast' (Qwen3-1.7B-Q8_0)"
+    )
+    parser.add_argument(
+        "--model",
+        default=None,
+        help="Optional path to custom GGUF model file"
     )
     parser.add_argument("--no-window", action="store_true", help="Run in headless mode")
     parser.add_argument("--no-gif", action="store_true", help="Disable recording GIFs")
@@ -250,5 +313,7 @@ if __name__ == "__main__":
         window_visible=not args.no_window,
         save_gif=not args.no_gif,
         max_episodes=args.episodes,
+        profile=args.profile,
+        model_path=args.model,
     )
     controller.run()
