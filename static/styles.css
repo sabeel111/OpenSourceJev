@@ -1409,36 +1409,6 @@ html.dark .status-pill {
   padding-top: 6px;
 }
 
-.hardware-spec-box {
-  background: var(--bg-input);
-  border: 1px solid var(--border-card);
-  border-radius: var(--radius-md);
-  padding: 12px;
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  font-size: 11.5px;
-}
-
-.spec-row {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-}
-
-.spec-label {
-  color: var(--text-muted);
-}
-
-.spec-val {
-  font-weight: 600;
-  color: var(--text-primary);
-}
-
-.text-success {
-  color: #047857;
-}
-
 /* Template Cards Grid */
 .template-cards-grid {
   display: grid;
