@@ -1,7 +1,7 @@
 """Small direct ctypes adapter for the official prebuilt llama.cpp runtime.
 
 This intentionally bypasses Ollama and llama-cpp-python.  The adapter loads
-the exported llama.cpp C API from ``runtime/llama.cpp/bin/llama.dll`` and reads
+the exported llama.cpp C API from runtime shared libraries (llama.dll / libllama.so / libllama.dylib) and reads
 the actual float32 logits returned by ``llama_get_logits_ith``.
 """
 
@@ -11,6 +11,7 @@ import ctypes
 import math
 import os
 import random
+import sys
 from pathlib import Path
 from threading import RLock
 from typing import Iterable, List, Optional, Sequence, Set
@@ -99,22 +100,63 @@ _LIBRARY_LOCK = RLock()
 _BACKEND_INITIALIZED = False
 
 
+def _lib_candidates(base_name: str) -> List[str]:
+    """Return platform-appropriate library file name candidates in order of preference."""
+    if os.name == "nt":
+        return [f"{base_name}.dll", f"lib{base_name}.dll"]
+    if sys.platform == "darwin":
+        return [f"lib{base_name}.dylib", f"{base_name}.dylib", f"lib{base_name}.so"]
+    return [f"lib{base_name}.so", f"{base_name}.so", f"{base_name}.dll"]
+
+
+def _find_library_file(directory: Path, base_name: str) -> Optional[Path]:
+    """Find a library file in directory matching platform candidates, or None if not found."""
+    if not directory.is_dir():
+        return None
+    for candidate in _lib_candidates(base_name):
+        candidate_path = directory / candidate
+        if candidate_path.is_file():
+            return candidate_path
+    return None
+
+
 def _project_root() -> Path:
     return Path(__file__).resolve().parent.parent
+
+
+def _runtime_search_dirs() -> List[Path]:
+    """Return search directories for llama.cpp runtime libraries."""
+    configured = os.getenv("JEV_LLAMA_RUNTIME")
+    if configured:
+        base = Path(configured).expanduser().resolve()
+        return [base, base / "bin", base / "lib", base / "lib64"]
+    root = _project_root() / "runtime" / "llama.cpp"
+    return [root / "bin", root / "lib", root / "lib64", root]
 
 
 def _runtime_dir() -> Path:
     configured = os.getenv("JEV_LLAMA_RUNTIME")
     if configured:
         return Path(configured).expanduser().resolve()
-    return _project_root() / "runtime" / "llama.cpp" / "bin"
+    for search_dir in _runtime_search_dirs():
+        if _find_library_file(search_dir, "llama") is not None:
+            return search_dir
+    if os.name == "nt":
+        return _project_root() / "runtime" / "llama.cpp" / "bin"
+    return _project_root() / "runtime" / "llama.cpp" / "lib"
 
 
 def _library_path() -> Path:
     configured = os.getenv("JEV_LLAMA_DLL")
     if configured:
         return Path(configured).expanduser().resolve()
-    return _runtime_dir() / "llama.dll"
+    for search_dir in _runtime_search_dirs():
+        found = _find_library_file(search_dir, "llama")
+        if found is not None:
+            return found
+    runtime_dir = _runtime_dir()
+    preferred_name = _lib_candidates("llama")[0]
+    return runtime_dir / preferred_name
 
 
 def _configure_library(lib: ctypes.CDLL) -> None:
@@ -191,8 +233,9 @@ def _load_library() -> ctypes.CDLL:
 
         path = _library_path()
         if not path.is_file():
+            preferred_name = path.name if path.name else _lib_candidates("llama")[0]
             raise RuntimeError(
-                f"llama.dll was not found at {path}. Download the official prebuilt runtime "
+                f"{preferred_name} was not found at {path}. Download the official prebuilt runtime "
                 "or set JEV_LLAMA_DLL."
             )
 
@@ -203,15 +246,48 @@ def _load_library() -> ctypes.CDLL:
             if cuda_path and Path(cuda_path, "bin").is_dir():
                 _DLL_HANDLES.append(os.add_dll_directory(str(Path(cuda_path, "bin"))))
 
+        cdll_kwargs = {"mode": ctypes.RTLD_GLOBAL} if hasattr(ctypes, "RTLD_GLOBAL") else {}
+
+        # Resolve backend (ggml) library
+        backend_file: Optional[Path] = None
+        configured_ggml = os.getenv("JEV_GGML_DLL")
+        if configured_ggml:
+            configured_path = Path(configured_ggml).expanduser().resolve()
+            if configured_path.is_file():
+                backend_file = configured_path
+
+        if backend_file is None:
+            backend_file = _find_library_file(runtime_dir, "ggml")
+
+        if backend_file is None:
+            for search_dir in _runtime_search_dirs():
+                found = _find_library_file(search_dir, "ggml")
+                if found is not None:
+                    backend_file = found
+                    break
+
         try:
-            backend_path = runtime_dir / "ggml.dll"
-            backend = ctypes.CDLL(str(backend_path))
-            backend.ggml_backend_load_all.argtypes = []
-            backend.ggml_backend_load_all.restype = None
-            backend.ggml_backend_load_all_from_path.argtypes = [ctypes.c_char_p]
-            backend.ggml_backend_load_all_from_path.restype = None
-            backend.ggml_backend_load_all_from_path(str(runtime_dir).encode("utf-8"))
-            lib = ctypes.CDLL(str(path))
+            backend: Optional[ctypes.CDLL] = None
+            if backend_file is not None:
+                backend = ctypes.CDLL(str(backend_file), **cdll_kwargs)
+            else:
+                for candidate in _lib_candidates("ggml"):
+                    try:
+                        backend = ctypes.CDLL(candidate, **cdll_kwargs)
+                        break
+                    except OSError:
+                        pass
+
+            if backend is not None:
+                if hasattr(backend, "ggml_backend_load_all"):
+                    backend.ggml_backend_load_all.argtypes = []
+                    backend.ggml_backend_load_all.restype = None
+                if hasattr(backend, "ggml_backend_load_all_from_path"):
+                    backend.ggml_backend_load_all_from_path.argtypes = [ctypes.c_char_p]
+                    backend.ggml_backend_load_all_from_path.restype = None
+                    backend.ggml_backend_load_all_from_path(str(runtime_dir).encode("utf-8"))
+
+            lib = ctypes.CDLL(str(path), **cdll_kwargs)
             _configure_library(lib)
             lib.llama_backend_init()
         except OSError as exc:
@@ -227,7 +303,8 @@ def native_status() -> dict:
     """Return runtime status without loading the GGUF weights."""
     path = _library_path()
     if not path.is_file():
-        return {"available": False, "cuda": False, "library": str(path), "error": "llama.dll not found"}
+        preferred_name = path.name if path.name else _lib_candidates("llama")[0]
+        return {"available": False, "cuda": False, "library": str(path), "error": f"{preferred_name} not found"}
     try:
         lib = _load_library()
         info = (lib.llama_print_system_info() or b"").decode("utf-8", errors="replace")
@@ -235,24 +312,61 @@ def native_status() -> dict:
         devices = []
         try:
             runtime_dir = path.parent
-            base_lib = ctypes.CDLL(str(runtime_dir / "ggml-base.dll"))
-            backend_lib = _BACKEND_LIBRARY or ctypes.CDLL(str(runtime_dir / "ggml.dll"))
+            cdll_kwargs = {"mode": ctypes.RTLD_GLOBAL} if hasattr(ctypes, "RTLD_GLOBAL") else {}
 
-            backend_lib.ggml_backend_dev_count.restype = ctypes.c_size_t
-            backend_lib.ggml_backend_dev_get.argtypes = [ctypes.c_size_t]
-            backend_lib.ggml_backend_dev_get.restype = ctypes.c_void_p
-            base_lib.ggml_backend_dev_name.argtypes = [ctypes.c_void_p]
-            base_lib.ggml_backend_dev_name.restype = ctypes.c_char_p
-            base_lib.ggml_backend_dev_description.argtypes = [ctypes.c_void_p]
-            base_lib.ggml_backend_dev_description.restype = ctypes.c_char_p
+            base_file = _find_library_file(runtime_dir, "ggml-base")
+            base_lib: Optional[ctypes.CDLL] = None
+            if base_file is not None:
+                try:
+                    base_lib = ctypes.CDLL(str(base_file), **cdll_kwargs)
+                except OSError:
+                    base_lib = None
 
-            count = int(backend_lib.ggml_backend_dev_count())
-            for i in range(count):
-                dev = backend_lib.ggml_backend_dev_get(i)
-                if dev:
-                    name = (base_lib.ggml_backend_dev_name(dev) or b"").decode("utf-8", errors="replace")
-                    desc = (base_lib.ggml_backend_dev_description(dev) or b"").decode("utf-8", errors="replace").strip()
-                    devices.append({"name": name, "description": desc})
+            backend_lib = _BACKEND_LIBRARY
+            if backend_lib is None:
+                backend_file = _find_library_file(runtime_dir, "ggml")
+                if backend_file is not None:
+                    try:
+                        backend_lib = ctypes.CDLL(str(backend_file), **cdll_kwargs)
+                    except OSError:
+                        backend_lib = None
+
+            lookup_libs = [l for l in (base_lib, backend_lib, lib) if l is not None]
+
+            dev_count_fn = None
+            dev_get_fn = None
+            dev_name_fn = None
+            dev_desc_fn = None
+
+            for candidate_lib in lookup_libs:
+                if dev_count_fn is None and hasattr(candidate_lib, "ggml_backend_dev_count"):
+                    dev_count_fn = candidate_lib.ggml_backend_dev_count
+                    dev_count_fn.restype = ctypes.c_size_t
+                if dev_get_fn is None and hasattr(candidate_lib, "ggml_backend_dev_get"):
+                    dev_get_fn = candidate_lib.ggml_backend_dev_get
+                    dev_get_fn.argtypes = [ctypes.c_size_t]
+                    dev_get_fn.restype = ctypes.c_void_p
+                if dev_name_fn is None and hasattr(candidate_lib, "ggml_backend_dev_name"):
+                    dev_name_fn = candidate_lib.ggml_backend_dev_name
+                    dev_name_fn.argtypes = [ctypes.c_void_p]
+                    dev_name_fn.restype = ctypes.c_char_p
+                if dev_desc_fn is None and hasattr(candidate_lib, "ggml_backend_dev_description"):
+                    dev_desc_fn = candidate_lib.ggml_backend_dev_description
+                    dev_desc_fn.argtypes = [ctypes.c_void_p]
+                    dev_desc_fn.restype = ctypes.c_char_p
+
+            if dev_count_fn and dev_get_fn:
+                count = int(dev_count_fn())
+                for i in range(count):
+                    dev = dev_get_fn(i)
+                    if dev:
+                        name = ""
+                        desc = ""
+                        if dev_name_fn:
+                            name = (dev_name_fn(dev) or b"").decode("utf-8", errors="replace")
+                        if dev_desc_fn:
+                            desc = (dev_desc_fn(dev) or b"").decode("utf-8", errors="replace").strip()
+                        devices.append({"name": name, "description": desc})
         except Exception:
             pass
 
