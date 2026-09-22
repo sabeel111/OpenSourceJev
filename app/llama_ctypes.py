@@ -208,12 +208,9 @@ def _load_library() -> ctypes.CDLL:
             backend = ctypes.CDLL(str(backend_path))
             backend.ggml_backend_load_all.argtypes = []
             backend.ggml_backend_load_all.restype = None
-            backend.ggml_backend_load_all_from_path.argtypes = [ctypes.c_char_p]
-            backend.ggml_backend_load_all_from_path.restype = None
-            backend.ggml_backend_load_all_from_path(str(runtime_dir).encode("utf-8"))
+            backend.ggml_backend_load_all()
             lib = ctypes.CDLL(str(path))
             _configure_library(lib)
-            lib.llama_backend_init()
         except OSError as exc:
             raise RuntimeError(f"Could not load the prebuilt llama.cpp runtime: {exc}") from exc
 

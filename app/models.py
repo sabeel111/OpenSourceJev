@@ -26,6 +26,7 @@ class RunRequest(BaseModel):
     mode: RunMode = "mock"
     model: Optional[str] = Field(default=None, max_length=120)
     model_path: Optional[str] = Field(default=None, max_length=1000)
+    profile: Optional[str] = Field(default=None, max_length=64)
     temperature: float = Field(default=0.0, ge=0, le=1)
 
 

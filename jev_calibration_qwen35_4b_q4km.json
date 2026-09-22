@@ -1,17 +1,30 @@
 {
-  "source": "Empirical fitting on Qwen3.5-4B-Q4_K_M.gguf",
+  "source": "Empirical fitting on Qwen3.5-4B-Q4_K_M.gguf with 100-fit / 100-heldout split",
   "model": "Qwen/Qwen3.5-4B",
   "quantization": "Q4_K_M",
   "noul": {
-    "temperature": 1.4603947597367997,
+    "temperature": 1.2364066052728862,
     "method": "sigmoid((logit_true - logit_false) / temperature)",
-    "dataset": "BoolQ",
-    "fit_examples": 50,
-    "metrics": {
-      "accuracy": 0.76,
-      "nll": 0.4731,
-      "brier": 0.1502,
-      "ece": 0.2722
+    "dataset": "Google BoolQ (Validation)",
+    "fit_examples": 100,
+    "held_out_examples": 100,
+    "fit_metrics": {
+      "accuracy": 0.81,
+      "nll": 0.436,
+      "brier": 0.1369,
+      "ece": 0.1657
+    },
+    "held_out_metrics": {
+      "accuracy": 0.85,
+      "nll": 0.3396,
+      "brier": 0.1045,
+      "ece": 0.1131,
+      "uncalibrated_nll": 0.3325,
+      "uncalibrated_brier": 0.103,
+      "uncalibrated_ece": 0.109,
+      "old_t17b_nll": 0.5952,
+      "old_t17b_brier": 0.2016,
+      "old_t17b_ece": 0.2881
     }
   }
 }

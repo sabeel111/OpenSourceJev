@@ -182,6 +182,6 @@ def test_model_scoped_calibration_resolution():
     path_qwen35 = _resolve_calibration_path("models/qwen35-4b-q4km/Qwen3.5-4B-Q4_K_M.gguf")
     assert path_qwen35.name == "jev_calibration_qwen35_4b_q4km.json"
     t_35 = _noul_temperature("models/qwen35-4b-q4km/Qwen3.5-4B-Q4_K_M.gguf")
-    assert abs(t_35 - 1.4604) < 0.01
+    assert abs(t_35 - 1.2364) < 0.01
 
 

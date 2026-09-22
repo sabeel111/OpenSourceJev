@@ -18,6 +18,7 @@ from typing import Any, Dict, Iterable, List, Optional, Sequence, Tuple
 from .engine import EngineError, _parse_condition
 from .llama_ctypes import CtypesLlama
 from .models import RunRequest, RunResponse, Step, StepTrace
+from .profiles import resolve_profile
 
 
 _MODEL_LOCKS: Dict[str, threading.RLock] = {}
@@ -217,6 +218,17 @@ class _NativeModelPool:
         n_gpu_layers = _env_int("JEV_LLAMA_N_GPU_LAYERS", -1)
         key = (path, n_ctx, n_batch, n_threads, n_gpu_layers)
         with _POOL_LOCK:
+            # Evict any other loaded model to preserve GPU VRAM on 4GB hardware
+            for old_key in list(_MODEL_POOL.keys()):
+                if old_key[0] != path:
+                    old_model = _MODEL_POOL.pop(old_key)
+                    try:
+                        old_model.close()
+                    except Exception:
+                        pass
+                    import gc
+                    gc.collect()
+
             if key not in _MODEL_POOL:
                 try:
                     _MODEL_POOL[key] = CtypesLlama(
@@ -249,10 +261,19 @@ class NativeJevEngine:
             raise EngineError("Every workflow step needs a unique id.")
 
         model_path = request.model_path or os.getenv("JEV_LLAMA_MODEL")
+        if not model_path and getattr(request, "profile", None):
+            prof = resolve_profile(requested_profile=request.profile)
+            model_path = prof.model_path if prof.is_available() else None
         if not model_path:
             raise EngineError(
                 "Native mode needs a GGUF path. Set JEV_LLAMA_MODEL or provide model_path in the request."
             )
+
+        profile = resolve_profile(
+            requested_profile=getattr(request, "profile", None),
+            requested_model=request.model or model_path,
+            model_path_override=model_path,
+        )
 
         model = _NativeModelPool.get(model_path)
         canonical_path = str(Path(model_path).expanduser().resolve())
@@ -319,16 +340,27 @@ class NativeJevEngine:
 
     @staticmethod
     def _meta(request: RunRequest, model_path: str, started: float) -> Dict[str, Any]:
+        profile = resolve_profile(
+            requested_profile=getattr(request, "profile", None),
+            model_path_override=model_path,
+        )
+        provenance = profile.to_provenance_dict()
+        provenance["n_gpu_layers"] = _env_int("JEV_LLAMA_N_GPU_LAYERS", -1)
+        provenance["n_ctx"] = _env_int("JEV_LLAMA_N_CTX", 4096)
+        provenance["n_batch"] = _env_int("JEV_LLAMA_N_BATCH", 512)
+
         return {
             "mode": "native",
             "backend": "llama.cpp",
             "model_path": model_path,
+            "profile": profile.name,
             "prompt_style": os.getenv("JEV_LLAMA_PROMPT_STYLE", "qwen3").lower(),
             "noul_temperature": _noul_temperature(model_path),
             "length_penalty_alpha": _length_penalty_alpha(),
             "step_count": len(request.workflow),
             "elapsed_ms": round((time.perf_counter() - started) * 1000),
             "timestamp": time.time(),
+            "provenance": provenance,
         }
 
     def _evaluate_step(

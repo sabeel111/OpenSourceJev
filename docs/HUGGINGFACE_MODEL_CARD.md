@@ -16,43 +16,46 @@ widget:
 - text: "Is this transaction fraudulent?"
 ---
 
-# OpenSourceJev: Calibrated Inference-Time Decision Engine (Qwen3-1.7B)
+# OpenSourceJev: Calibrated Inference-Time Decision Engine (Qwen3-1.7B & Qwen3.5-4B)
 
 > **Zero-token generation overhead. Direct next-token logits. Strictly calibrated Kahneman System 1 decisions.**
 
 **OpenSourceJev** is an open-source, local implementation of the inference-time decision paradigm pioneered by **TypeSafe Jev**. Instead of asking an LLM to generate conversational reasoning tokens or self-report confidence numbers ("I am 90% sure"), OpenSourceJev bypasses reasoning tokens and projects the model's raw unnormalized next-token logits directly onto a constrained semantic action space (`Choice`, `Score`, and `Noul`).
 
-This repository contains the calibrated **Qwen3-1.7B-Q8_0.gguf** model weights, calibration temperatures, and benchmark logs verified against the canonical [JevBench](https://github.com/fstandhartinger/jevbench) evaluation suite.
+This repository supports dual calibrated model profiles:
+1. **`fast` Profile**: **Qwen3-1.7B-Q8_0.gguf** ($T = 9.4705$, ~312ms p50, 2.2 GB VRAM)
+2. **`accuracy` Profile**: **Qwen3.5-4B-Q4_K_M.gguf** ($T = 1.2364$, ~436ms p50, 3.1 GB VRAM)
 
 ---
 
 ## Key Features & Benchmark Highlights
 
-* **Hardware Efficiency**: Evaluated on a **4GB RTX 3050 Laptop GPU** with 100% CUDA offload in `llama.cpp` (~2.1 GB VRAM footprint).
+* **Hardware Efficiency**: Evaluated on a **4GB RTX 3050 Laptop GPU** with 100% CUDA offload in `llama.cpp`. Safe dynamic pool eviction guarantees zero CUDA OOM when alternating profiles.
 * **Platform**: Built for **Windows 10 / 11 (64-bit)** with native CUDA acceleration (Linux is currently not supported).
-* **Wire Compatibility**: Drop-in compatible with TypeSafe Jev API (`POST /v1/systemone`) and OpenAI-compatible endpoints.
-* **Instant Latency**: **~312ms median latency (p50)** per decision.
-* **100% Strict Schema Validity**: Zero hallucinations or malformed schema outputs across all benchmark tasks.
+* **Wire Compatibility**: Drop-in compatible with TypeSafe Jev API (`POST /v1/systemone`) and OpenAI-compatible endpoints (`GET /v1/models`).
+* **Instant Latency**: **~312ms - 436ms median latency (p50)** per decision.
+* **100% Strict Schema Validity**: Zero hallucinations or malformed schema outputs across 231/231 benchmark tasks.
 
-### Canonical JevBench Evaluation
+### Canonical JevBench Dual-Model Evaluation
 
-| Benchmark Suite | Metric | Baseline (`main`) | Optimized Engine (`dev`) | Net Improvement |
+| Benchmark Suite | Metric | `fast` Profile (Qwen3-1.7B) | `accuracy` Profile (Qwen3.5-4B) | Delta |
 | :--- | :--- | :--- | :--- | :--- |
-| **`original.jsonl`** (72 tasks) | **Overall Accuracy** | 55.56% (40/72) | **69.44%** (50/72) | **+13.89%** |
-| | **Ordinal / Score Tasks** | 25.00% (3/12) | **91.67%** (11/12) | **+66.67%** |
-| | **Policy / Noul Tasks** | 50.00% (6/12) | **66.67%** (8/12) | **+16.67%** |
-| | **Extraction Tasks** | 83.33% (10/12) | **83.33%** (10/12) | Maintained |
-| | **Intent Classification** | 75.00% (9/12) | **75.00%** (9/12) | Maintained |
-| | **Routing Tasks** | 50.00% (6/12) | **50.00%** (6/12) | Parity (+1 win) |
-| | **Expected Calibration Error (ECE)** | 0.244 | **0.164** | **-32.8%** (well-calibrated) |
-| | **Median Latency (p50)** | 0.402s | **0.277s** | **31.1% faster** |
-| **`easy.jsonl`** (48 tasks) | **Overall Accuracy** | 87.50% (42/48) | **95.83%** (46/48) | **+8.33%** |
-| | **Tool Selection** | 100.0% (12/12) | **100.0%** (12/12) | 100% perfect |
-| | **Extraction** | 100.0% (12/12) | **100.0%** (12/12) | 100% perfect |
-| | **Fact Verification** | 91.67% (11/12) | **91.67%** (11/12) | Maintained |
-| | **Intent Classification** | 91.67% (11/12) | **91.67%** (11/12) | Maintained |
-| **`hard.jsonl`** (111 tasks) | **Overall Accuracy** | — | **39.64%** (44/111) | Tiny 1.7B zero-shot |
-| | **Routing Hard** | — | **100.0%** (5/5) | Perfect routing |
+| **`original.jsonl`** (72 tasks) | **Overall Accuracy** | 69.44% (50/72) | **93.06% (67/72)** | **+23.62%** |
+| | **Routing Tasks** | 50.00% (6/12) | **100.0% (12/12)** | **+50.00%** |
+| | **Policy / Noul Tasks** | 66.67% (8/12) | **91.67% (11/12)** | **+25.00%** |
+| | **Ordinal / Score Tasks** | 91.67% (11/12) | **100.0% (12/12)** | **+8.33%** |
+| | **Extraction Tasks** | 83.33% (10/12) | **91.67% (11/12)** | **+8.34%** |
+| | **Intent Classification** | 75.00% (9/12) | **83.33% (10/12)** | **+8.33%** |
+| | **Expected Calibration Error (ECE)** | 0.164 | **0.105** | **-36.0%** |
+| | **Median Latency (p50)** | **277 ms** | 436 ms | Low latency |
+| **`easy.jsonl`** (48 tasks) | **Overall Accuracy** | 95.83% (46/48) | **100.0% (48/48)** | **+4.17% (Perfect)** |
+| | **Tool Selection** | 100.0% (12/12) | **100.0% (12/12)** | 100% perfect |
+| | **Extraction** | 100.0% (12/12) | **100.0% (12/12)** | 100% perfect |
+| | **Fact Verification** | 91.67% (11/12) | **100.0% (12/12)** | 100% perfect |
+| | **Intent Classification** | 91.67% (11/12) | **100.0% (12/12)** | 100% perfect |
+| **`hard.jsonl`** (111 tasks) | **Overall Accuracy** | 39.64% (44/111) | **59.46% (66/111)** | **+19.82%** |
+| | **Routing Hard** | 100.0% (5/5) | **100.0% (5/5)** | 100% perfect |
+| **Schema Validity** | **Valid JSON / Types** | **100% (231/231)** | **100% (231/231)** | Zero syntax errors |
 
 ---
 

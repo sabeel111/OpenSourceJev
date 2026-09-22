@@ -13,6 +13,7 @@ from fastapi.staticfiles import StaticFiles
 from .engine import EngineError, JevEngine
 from .llama_ctypes import native_status
 from .models import RunRequest, RunResponse
+from .profiles import PROFILES, resolve_profile
 
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -119,11 +120,10 @@ async def health() -> Dict[str, Any]:
         pass
     native = native_status()
     native["gpu_layers"] = os.getenv("JEV_LLAMA_N_GPU_LAYERS", "-1")
-    bundled_model = ROOT / "models" / "Qwen3-1.7B-Q8_0.gguf"
-    native["default_model"] = os.getenv(
-        "JEV_LLAMA_MODEL",
-        str(bundled_model) if bundled_model.is_file() else "",
-    )
+    active_profile = resolve_profile()
+    native["active_profile"] = active_profile.name
+    native["available_profiles"] = [p.name for p in PROFILES.values() if p.is_available()]
+    native["default_model"] = active_profile.model_path if active_profile.is_available() else ""
     return {
         "status": "ok",
         "app": "jev",
@@ -137,6 +137,23 @@ async def health() -> Dict[str, Any]:
 @app.get("/api/examples")
 async def examples() -> Dict[str, Any]:
     return {"examples": EXAMPLES}
+
+
+@app.get("/v1/models")
+async def list_models() -> Dict[str, Any]:
+    """OpenAI / TypeSafe compatibility endpoint listing available decision models."""
+    data = []
+    for prof_key, prof in PROFILES.items():
+        data.append({
+            "id": prof.model_name,
+            "profile": prof.name,
+            "object": "model",
+            "available": prof.is_available(),
+            "calibration_file": prof.calibration_path,
+            "default_temperature": prof.default_temperature,
+            "sha256": prof.get_sha256() if prof.is_available() else None,
+        })
+    return {"object": "list", "data": data}
 
 
 @app.post("/api/run", response_model=RunResponse)
@@ -189,20 +206,22 @@ async def systemone(payload: Dict[str, Any]) -> Dict[str, Any]:
         )
         workflow.append(step)
 
+    req_profile = payload.get("profile")
     req_model = payload.get("model")
-    bundled_model = ROOT / "models" / "Qwen3-1.7B-Q8_0.gguf"
-    qwen35_model = ROOT / "models" / "qwen35-4b-q4km" / "Qwen3.5-4B-Q4_K_M.gguf"
-    if req_model and ("qwen35" in req_model.lower() or "qwen3.5" in req_model.lower()) and qwen35_model.is_file():
-        default_model = str(qwen35_model)
-    else:
-        default_model = str(bundled_model) if bundled_model.is_file() else None
-    model_path = os.getenv("JEV_LLAMA_MODEL", default_model)
+    profile = resolve_profile(
+        requested_profile=req_profile,
+        requested_model=req_model,
+    )
+    model_path = profile.model_path if profile.is_available() else None
 
+    req_mode = payload.get("mode") or ("native" if model_path else "mock")
     req = RunRequest(
         context=state_str,
         workflow=workflow,
-        mode="native" if model_path else "mock",
+        mode=req_mode,
+        model=req_model or profile.model_name,
         model_path=model_path,
+        profile=profile.name,
     )
 
     try:
@@ -253,6 +272,7 @@ async def systemone(payload: Dict[str, Any]) -> Dict[str, Any]:
                 "value": trace.value,
             }
 
+    provenance = resp.meta.get("provenance", profile.to_provenance_dict())
     return {
         "model": payload.get("model", "opensourcejev-qwen3-1.7b"),
         "answers": answers,
@@ -260,4 +280,6 @@ async def systemone(payload: Dict[str, Any]) -> Dict[str, Any]:
             "input_tokens": resp.meta.get("input_tokens", max(1, len(state_str) // 4)),
             "output_tokens": len(workflow),
         },
+        "profile": profile.name,
+        "provenance": provenance,
     }
