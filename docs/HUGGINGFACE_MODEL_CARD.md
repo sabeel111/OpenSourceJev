@@ -29,20 +29,22 @@ This repository contains the calibrated **Qwen3-1.7B-Q8_0.gguf** model weights, 
 ## Key Features & Benchmark Highlights
 
 * **Hardware Efficiency**: Evaluated on a **4GB RTX 3050 Laptop GPU** with 100% CUDA offload in `llama.cpp` (~2.1 GB VRAM footprint).
+* **Platform**: Built for **Windows 10 / 11 (64-bit)** with native CUDA acceleration (Linux is currently not supported).
 * **Wire Compatibility**: Drop-in compatible with TypeSafe Jev API (`POST /v1/systemone`) and OpenAI-compatible endpoints.
-* **Instant Latency**: **~277ms median latency (p50)** per decision.
+* **Instant Latency**: **~312ms median latency (p50)** per decision.
 * **100% Strict Schema Validity**: Zero hallucinations or malformed schema outputs across all benchmark tasks.
 
 ### Canonical JevBench Evaluation
 
 | Benchmark Suite | Metric | Baseline (`main`) | Optimized Engine (`dev`) | Net Improvement |
 | :--- | :--- | :--- | :--- | :--- |
-| **`original.jsonl`** (72 tasks) | **Overall Accuracy** | 55.56% (40/72) | **68.06%** (49/72) | **+12.50%** |
+| **`original.jsonl`** (72 tasks) | **Overall Accuracy** | 55.56% (40/72) | **69.44%** (50/72) | **+13.89%** |
 | | **Ordinal / Score Tasks** | 25.00% (3/12) | **91.67%** (11/12) | **+66.67%** |
 | | **Policy / Noul Tasks** | 50.00% (6/12) | **66.67%** (8/12) | **+16.67%** |
 | | **Extraction Tasks** | 83.33% (10/12) | **83.33%** (10/12) | Maintained |
 | | **Intent Classification** | 75.00% (9/12) | **75.00%** (9/12) | Maintained |
-| | **Expected Calibration Error (ECE)** | 0.244 | **0.157** | **-35.7%** (drastic calibration gain) |
+| | **Routing Tasks** | 50.00% (6/12) | **50.00%** (6/12) | Parity (+1 win) |
+| | **Expected Calibration Error (ECE)** | 0.244 | **0.164** | **-32.8%** (well-calibrated) |
 | | **Median Latency (p50)** | 0.402s | **0.277s** | **31.1% faster** |
 | **`easy.jsonl`** (48 tasks) | **Overall Accuracy** | 87.50% (42/48) | **95.83%** (46/48) | **+8.33%** |
 | | **Tool Selection** | 100.0% (12/12) | **100.0%** (12/12) | 100% perfect |
