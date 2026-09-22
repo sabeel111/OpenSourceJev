@@ -627,6 +627,120 @@ html.dark .status-pill {
   gap: 6px;
 }
 
+/* Mode Toggle (Visual vs JSON) */
+.chain-mode-toggle {
+  display: inline-flex;
+  align-items: center;
+  background: var(--bg-hover);
+  border: 1px solid var(--border-card);
+  border-radius: var(--radius-md);
+  padding: 2px;
+  gap: 2px;
+}
+
+.mode-toggle-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 10px;
+  border-radius: 6px;
+  font-size: 11.5px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  font-family: var(--font-sans);
+  transition: all 0.15s ease;
+}
+
+.mode-toggle-btn:hover {
+  color: var(--text-primary);
+}
+
+.mode-toggle-btn.active {
+  background: var(--bg-card);
+  color: var(--text-primary);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.06);
+}
+
+/* JSON Steps View */
+.json-steps-view {
+  background: var(--bg-card);
+  border: 1px solid var(--border-card);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  box-shadow: var(--shadow-sm);
+  display: flex;
+  flex-direction: column;
+}
+
+.json-editor-topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 14px;
+  background: var(--bg-hover);
+  border-bottom: 1px solid var(--border-card);
+}
+
+.json-editor-legend {
+  font-size: 11.5px;
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+
+.json-editor-actions {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.json-code-textarea {
+  width: 100%;
+  padding: 14px;
+  font-family: var(--font-mono);
+  font-size: 12.5px;
+  line-height: 1.6;
+  color: var(--text-primary);
+  background: var(--bg-card);
+  border: none;
+  outline: none;
+  resize: vertical;
+  min-height: 240px;
+  box-sizing: border-box;
+}
+
+.json-code-textarea:focus {
+  background: var(--bg-hover);
+}
+
+.json-parse-error {
+  padding: 8px 14px;
+  background: rgba(239, 68, 68, 0.08);
+  border-top: 1px solid rgba(239, 68, 68, 0.25);
+  color: var(--brand-rose);
+  font-size: 11.5px;
+  font-family: var(--font-mono);
+}
+
+.json-editor-footer {
+  padding: 8px 14px;
+  border-top: 1px solid var(--border-card);
+  background: var(--bg-hover);
+  color: var(--text-muted);
+  font-size: 11px;
+}
+
+.json-hint code {
+  background: var(--bg-card);
+  border: 1px solid var(--border-card);
+  padding: 1px 4px;
+  border-radius: 4px;
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+}
+
 /* Steps Stack */
 .steps-stack {
   display: flex;

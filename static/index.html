@@ -234,6 +234,18 @@
           </div>
 
           <div class="section-actions">
+            <!-- Mode Switcher: Visual vs JSON -->
+            <div class="chain-mode-toggle">
+              <button id="tab-step-visual" class="mode-toggle-btn active" type="button">Visual</button>
+              <button id="tab-step-json" class="mode-toggle-btn" type="button">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <polyline points="16 18 22 12 16 6"/>
+                  <polyline points="8 6 2 12 8 18"/>
+                </svg>
+                <span>JSON</span>
+              </button>
+            </div>
+
             <button id="add-step-btn" class="btn btn-outline btn-sm" type="button">
               <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <line x1="12" y1="5" x2="12" y2="19"/>
@@ -252,15 +264,45 @@
               <div id="chain-options-menu" class="dropdown-menu">
                 <button id="opt-reset-preset" class="dropdown-item" type="button">Reset to Current Preset</button>
                 <button id="opt-clear-steps" class="dropdown-item text-danger" type="button">Clear All Steps</button>
+                <button id="opt-format-json" class="dropdown-item" type="button">Format JSON</button>
                 <button id="opt-export-json" class="dropdown-item" type="button">Copy Steps as JSON</button>
               </div>
             </div>
           </div>
         </div>
 
-        <!-- Dynamic List of Step Cards -->
+        <!-- Dynamic List of Step Cards (Visual Mode) -->
         <div id="visual-steps-list" class="steps-stack">
           <!-- Step cards will be injected by JavaScript -->
+        </div>
+
+        <!-- Raw JSON Editor View (JSON Mode) -->
+        <div id="json-steps-view" class="json-steps-view" style="display: none;">
+          <div class="json-editor-topbar">
+            <span class="json-editor-legend">Edit workflow steps as JSON array</span>
+            <div class="json-editor-actions">
+              <button id="json-format-btn" class="btn btn-ghost btn-xs" type="button" title="Format JSON (Ctrl+Alt+F)">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <polyline points="4 7 4 4 20 4 20 7"/>
+                  <line x1="9" y1="20" x2="15" y2="20"/>
+                  <line x1="12" y1="4" x2="12" y2="20"/>
+                </svg>
+                <span>Format</span>
+              </button>
+              <button id="json-copy-btn" class="btn btn-ghost btn-xs" type="button" title="Copy to Clipboard">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <rect x="9" y="9" width="13" height="13" rx="2" ry="2"/>
+                  <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
+                </svg>
+                <span>Copy</span>
+              </button>
+            </div>
+          </div>
+          <textarea id="workflow-json-editor" class="json-code-textarea" rows="14" spellcheck="false" placeholder="[ { &quot;id&quot;: &quot;gate&quot;, &quot;kind&quot;: &quot;noul&quot;, &quot;prompt&quot;: &quot;Is it valid?&quot; } ]"></textarea>
+          <div id="json-parse-error" class="json-parse-error" style="display: none;"></div>
+          <div class="json-editor-footer">
+            <span class="json-hint">Supports <code>noul</code>, <code>choice</code>, <code>score</code>, and <code>text</code> primitives with conditional <code>&quot;when&quot;: &quot;step_id == value&quot;</code> logic.</span>
+          </div>
         </div>
       </div>
     </main>
@@ -584,6 +626,6 @@
   <input id="model-input" type="hidden" value="models\Qwen3-1.7B-Q8_0.gguf">
   <input id="temperature-input" type="hidden" value="0.0">
 
-  <script src="/static/app.js?v=4"></script>
+  <script src="/static/app.js?v=5"></script>
 </body>
 </html>

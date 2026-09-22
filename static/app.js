@@ -13,6 +13,7 @@ const state = {
   temperature: 0.0,
   logs: [],
   currentExampleIndex: 0,
+  stepMode: "visual",
 };
 
 const $ = (id) => document.getElementById(id);
@@ -170,6 +171,7 @@ function attachVisualStepListeners() {
           val = Number(val);
         }
         state.workflow[index][field] = val;
+        syncVisualToJson();
         if (field === "kind") renderVisualSteps();
       });
     });
@@ -179,6 +181,7 @@ function attachVisualStepListeners() {
       deleteBtn.addEventListener("click", () => {
         state.workflow.splice(index, 1);
         renderVisualSteps();
+        syncVisualToJson();
       });
     }
 
@@ -190,6 +193,7 @@ function attachVisualStepListeners() {
           state.workflow[index] = state.workflow[index - 1];
           state.workflow[index - 1] = temp;
           renderVisualSteps();
+          syncVisualToJson();
         }
       });
     }
@@ -202,6 +206,7 @@ function attachVisualStepListeners() {
           state.workflow[index] = state.workflow[index + 1];
           state.workflow[index + 1] = temp;
           renderVisualSteps();
+          syncVisualToJson();
         }
       });
     }
@@ -220,9 +225,135 @@ function addNewStep(kind = "noul") {
 
   state.workflow.push(newStep);
   renderVisualSteps();
+  syncVisualToJson();
 
   // Scroll smoothly to newly added step
   visualStepsList.scrollTop = visualStepsList.scrollHeight;
+}
+
+/* ==========================================================================
+   JSON Mode Synchronization & Utilities
+   ========================================================================== */
+
+function syncVisualToJson() {
+  const jsonEditor = $("workflow-json-editor");
+  if (jsonEditor) {
+    jsonEditor.value = JSON.stringify(state.workflow, null, 2);
+  }
+  const jsonParseError = $("json-parse-error");
+  if (jsonParseError) {
+    jsonParseError.style.display = "none";
+  }
+}
+
+function syncJsonToVisual() {
+  const jsonEditor = $("workflow-json-editor");
+  const jsonParseError = $("json-parse-error");
+  if (!jsonEditor) return true;
+  const text = jsonEditor.value.trim();
+  if (!text) {
+    state.workflow = [];
+    renderVisualSteps();
+    if (jsonParseError) jsonParseError.style.display = "none";
+    return true;
+  }
+  try {
+    const parsed = JSON.parse(text);
+    if (!Array.isArray(parsed)) {
+      throw new Error("Workflow steps must be a JSON array of step objects: [ { ... }, ... ]");
+    }
+    for (let i = 0; i < parsed.length; i++) {
+      const item = parsed[i];
+      if (!item || typeof item !== "object") {
+        throw new Error(`Step at index ${i} is not a valid object.`);
+      }
+      if (!item.id) {
+        item.id = `step_${i + 1}`;
+      }
+      if (!item.kind) {
+        item.kind = "noul";
+      }
+    }
+    state.workflow = parsed;
+    if (jsonParseError) jsonParseError.style.display = "none";
+    renderVisualSteps();
+    return true;
+  } catch (err) {
+    if (jsonParseError) {
+      jsonParseError.textContent = `JSON Error: ${err.message}`;
+      jsonParseError.style.display = "block";
+    }
+    return false;
+  }
+}
+
+function switchStepMode(mode) {
+  const tabVisual = $("tab-step-visual");
+  const tabJson = $("tab-step-json");
+  const visualView = $("visual-steps-list");
+  const jsonView = $("json-steps-view");
+  const jsonEditor = $("workflow-json-editor");
+
+  if (mode === "json") {
+    state.stepMode = "json";
+    if (tabVisual) tabVisual.classList.remove("active");
+    if (tabJson) tabJson.classList.add("active");
+    if (visualView) visualView.style.display = "none";
+    if (jsonView) jsonView.style.display = "flex";
+    syncVisualToJson();
+    if (jsonEditor) jsonEditor.focus();
+  } else {
+    if (!syncJsonToVisual()) {
+      return; // Do not switch if JSON is invalid
+    }
+    state.stepMode = "visual";
+    if (tabJson) tabJson.classList.remove("active");
+    if (tabVisual) tabVisual.classList.add("active");
+    if (jsonView) jsonView.style.display = "none";
+    if (visualView) visualView.style.display = "flex";
+  }
+}
+
+function formatJson() {
+  const jsonEditor = $("workflow-json-editor");
+  const jsonParseError = $("json-parse-error");
+  if (!jsonEditor) return;
+  try {
+    const parsed = JSON.parse(jsonEditor.value);
+    jsonEditor.value = JSON.stringify(parsed, null, 2);
+    if (jsonParseError) jsonParseError.style.display = "none";
+    if (Array.isArray(parsed)) {
+      state.workflow = parsed;
+      renderVisualSteps();
+    }
+  } catch (err) {
+    if (jsonParseError) {
+      jsonParseError.textContent = `Cannot format invalid JSON: ${err.message}`;
+      jsonParseError.style.display = "block";
+    }
+  }
+}
+
+function copyJson() {
+  const jsonEditor = $("workflow-json-editor");
+  const text = jsonEditor && state.stepMode === "json"
+    ? jsonEditor.value
+    : JSON.stringify(state.workflow, null, 2);
+  navigator.clipboard.writeText(text).then(() => {
+    const copyBtn = $("json-copy-btn");
+    if (copyBtn) {
+      const originalHtml = copyBtn.innerHTML;
+      copyBtn.innerHTML = `
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <polyline points="20 6 9 17 4 12"/>
+        </svg>
+        <span>Copied!</span>
+      `;
+      setTimeout(() => { copyBtn.innerHTML = originalHtml; }, 1800);
+    }
+  }).catch(() => {
+    alert("Workflow JSON copied to clipboard!");
+  });
 }
 
 /* ==========================================================================
@@ -239,6 +370,7 @@ function selectExample(example) {
   }
 
   renderVisualSteps();
+  syncVisualToJson();
   resetOutputToIdle();
 }
 
@@ -256,7 +388,8 @@ async function loadExamples() {
   try {
     const res = await fetch("/api/examples");
     if (!res.ok) throw new Error("Could not load examples");
-    state.examples = await res.json();
+    const data = await res.json();
+    state.examples = Array.isArray(data) ? data : (data.examples || []);
 
     presetSelect.innerHTML = state.examples.map((ex) => `
       <option value="${escapeHtml(ex.id)}">${escapeHtml(ex.name)}</option>
@@ -276,13 +409,25 @@ function renderWorkflowsGallery() {
   const gallery = $("workflows-gallery-list");
   if (!gallery) return;
 
-  gallery.innerHTML = state.examples.map((ex) => `
-    <div class="template-card" data-id="${escapeHtml(ex.id)}">
-      <h4 class="template-name">${escapeHtml(ex.name)}</h4>
-      <p class="template-desc">${escapeHtml(ex.description)}</p>
-      <span class="template-steps-count">${ex.workflow.length} evaluation steps &rarr;</span>
-    </div>
-  `).join("");
+  gallery.innerHTML = state.examples.map((ex) => {
+    const kinds = ex.workflow.map((s) => s.kind || "noul");
+    const pills = Array.from(new Set(kinds))
+      .map((k) => `<span class="meta-tag steps">${escapeHtml(k)}</span>`)
+      .join(" ");
+    return `
+      <div class="template-card" data-id="${escapeHtml(ex.id)}">
+        <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 6px;">
+          <h4 class="template-name" style="margin-bottom: 0;">${escapeHtml(ex.name)}</h4>
+          <div style="display: flex; gap: 4px;">${pills}</div>
+        </div>
+        <p class="template-desc">${escapeHtml(ex.description)}</p>
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-top: auto; padding-top: 8px;">
+          <span class="template-steps-count">${ex.workflow.length} evaluation steps &rarr;</span>
+          <span style="font-size: 11px; font-weight: 600; color: var(--brand-green);">Load Preset</span>
+        </div>
+      </div>
+    `;
+  }).join("");
 
   gallery.querySelectorAll(".template-card").forEach((card) => {
     card.addEventListener("click", () => {
@@ -301,6 +446,12 @@ function renderWorkflowsGallery() {
    ========================================================================== */
 
 async function runWorkflow() {
+  if (state.stepMode === "json") {
+    if (!syncJsonToVisual()) {
+      alert("Cannot run workflow: please resolve the JSON syntax error.");
+      return;
+    }
+  }
   const context = contextInput.value.trim();
   if (!context) {
     alert("Please provide context or a command to evaluate.");
@@ -605,6 +756,57 @@ function attachEventListeners() {
   // Decision Chain Header Actions
   $("add-step-btn").addEventListener("click", () => addNewStep("noul"));
 
+  // Mode Switcher (Visual vs JSON)
+  const tabStepVisual = $("tab-step-visual");
+  const tabStepJson = $("tab-step-json");
+  if (tabStepVisual) tabStepVisual.addEventListener("click", () => switchStepMode("visual"));
+  if (tabStepJson) tabStepJson.addEventListener("click", () => switchStepMode("json"));
+
+  // JSON Mode Buttons
+  const jsonFormatBtn = $("json-format-btn");
+  if (jsonFormatBtn) jsonFormatBtn.addEventListener("click", formatJson);
+
+  const jsonCopyBtn = $("json-copy-btn");
+  if (jsonCopyBtn) jsonCopyBtn.addEventListener("click", copyJson);
+
+  // Live JSON validation & shortcut handling in JSON Editor
+  const jsonEditor = $("workflow-json-editor");
+  if (jsonEditor) {
+    jsonEditor.addEventListener("input", () => {
+      const text = jsonEditor.value.trim();
+      const jsonParseError = $("json-parse-error");
+      if (!text) {
+        if (jsonParseError) jsonParseError.style.display = "none";
+        return;
+      }
+      try {
+        const parsed = JSON.parse(text);
+        if (!Array.isArray(parsed)) {
+          if (jsonParseError) {
+            jsonParseError.textContent = "Workflow must be a JSON array: [ { ... } ]";
+            jsonParseError.style.display = "block";
+          }
+          return;
+        }
+        if (jsonParseError) jsonParseError.style.display = "none";
+        state.workflow = parsed;
+      } catch (e) {
+        if (jsonParseError) {
+          jsonParseError.textContent = `JSON Syntax Error: ${e.message}`;
+          jsonParseError.style.display = "block";
+        }
+      }
+    });
+
+    jsonEditor.addEventListener("keydown", (e) => {
+      if ((e.ctrlKey && e.altKey && e.key.toLowerCase() === "f") ||
+          (e.altKey && e.shiftKey && e.key.toLowerCase() === "f")) {
+        e.preventDefault();
+        formatJson();
+      }
+    });
+  }
+
   chainOptionsButton.addEventListener("click", (e) => {
     e.stopPropagation();
     chainOptionsMenu.classList.toggle("show");
@@ -618,13 +820,20 @@ function attachEventListeners() {
   $("opt-clear-steps").addEventListener("click", () => {
     state.workflow = [];
     renderVisualSteps();
+    syncVisualToJson();
     chainOptionsMenu.classList.remove("show");
   });
 
-  $("opt-export-json").addEventListener("click", () => {
-    navigator.clipboard.writeText(JSON.stringify(state.workflow, null, 2)).then(() => {
-      alert("Workflow JSON copied to clipboard!");
+  const optFormatJson = $("opt-format-json");
+  if (optFormatJson) {
+    optFormatJson.addEventListener("click", () => {
+      formatJson();
+      chainOptionsMenu.classList.remove("show");
     });
+  }
+
+  $("opt-export-json").addEventListener("click", () => {
+    copyJson();
     chainOptionsMenu.classList.remove("show");
   });
 
