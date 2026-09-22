@@ -18,7 +18,7 @@ from .profiles import PROFILES, resolve_profile
 
 ROOT = Path(__file__).resolve().parent.parent
 OLLAMA_URL = os.getenv("JEV_OLLAMA_URL", "http://127.0.0.1:11434").rstrip("/")
-app = FastAPI(title="Jev MVP", version="0.1.0", description="Local structured decision playground")
+app = FastAPI(title="OpenSourceJev", version="0.1.0", description="Local structured decision playground")
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],

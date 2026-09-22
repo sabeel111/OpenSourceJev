@@ -1,5 +1,5 @@
 /**
- * Jev — Client Controller
+ * OpenSourceJev — Client Controller
  * Pixel-accurate UI Controller matching the reference SaaS interface
  */
 
@@ -130,7 +130,7 @@ function renderVisualSteps() {
         </div>
 
         <input class="step-prompt-input" type="text" value="${escapeHtml(step.prompt || "")}" 
-               placeholder="Question or evaluation rubric for Jev..." data-field="prompt">
+               placeholder="Question or evaluation rubric for OpenSourceJev..." data-field="prompt">
 
         <div class="step-extra-row">
           <input class="step-condition-input" type="text" value="${escapeHtml(step.when || "")}" 
@@ -867,7 +867,7 @@ function attachEventListeners() {
     const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(state.workflow, null, 2));
     const downloadAnchor = document.createElement("a");
     downloadAnchor.setAttribute("href", dataStr);
-    downloadAnchor.setAttribute("download", `jev_workflow_${Date.now()}.json`);
+    downloadAnchor.setAttribute("download", `opensourcejev_workflow_${Date.now()}.json`);
     document.body.appendChild(downloadAnchor);
     downloadAnchor.click();
     downloadAnchor.remove();
