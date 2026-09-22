@@ -56,7 +56,9 @@ OpenSourceJev Approach:
 
 ## 🛠️ System Requirements
 
-* **Operating System**: Windows 10 / 11 (64-bit) or Linux x86_64
+* **Operating System**: **Windows 10 / 11 (64-bit)** only
+  > [!WARNING]
+  > **Linux is currently NOT supported**: OpenSourceJev currently relies on Windows-specific native prebuilt `llama.cpp` dynamic libraries (`.dll` / `.exe`) and PowerShell runtime automation. Linux (`.so` / bash) support is planned for a future release.
 * **Python**: Python 3.11 or newer
 * **GPU**: NVIDIA GPU with CUDA 12.x (e.g. RTX 3050 Laptop GPU or desktop GPU with $\ge$ 4 GB VRAM). CPU inference is also supported.
 * **RAM**: 8 GB+ RAM
@@ -255,6 +257,7 @@ pytest
 - [x] FastAPI web playground & execution trace visualization
 - [x] Real-time ViZDoom controller demo
 - [ ] **Parallel KV-cache sequence copying (`llama_kv_cache_seq_cp`)** to evaluate $N$ independent questions simultaneously in $O(1)$ passes
+- [ ] Cross-platform Linux support (Linux x86_64 `.so` prebuilts & bash runtime scripts)
 - [ ] Multi-class calibration (Vector scaling / Matrix scaling) for `Choice`
 - [ ] RLCD LoRA fine-tuning recipes for open-source models
 

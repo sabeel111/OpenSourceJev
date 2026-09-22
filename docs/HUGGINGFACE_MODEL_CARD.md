@@ -29,6 +29,7 @@ This repository contains the calibrated **Qwen3-1.7B-Q8_0.gguf** model weights, 
 ## Key Features & Benchmark Highlights
 
 * **Hardware Efficiency**: Evaluated on a **4GB RTX 3050 Laptop GPU** with 100% CUDA offload in `llama.cpp` (~2.1 GB VRAM footprint).
+* **Platform**: Built for **Windows 10 / 11 (64-bit)** with native CUDA acceleration (Linux is currently not supported).
 * **Wire Compatibility**: Drop-in compatible with TypeSafe Jev API (`POST /v1/systemone`) and OpenAI-compatible endpoints.
 * **Instant Latency**: **~277ms median latency (p50)** per decision.
 * **100% Strict Schema Validity**: Zero hallucinations or malformed schema outputs across all benchmark tasks.
