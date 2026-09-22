@@ -365,7 +365,7 @@ function selectExample(example) {
   contextInput.value = example.context;
   state.workflow = JSON.parse(JSON.stringify(example.workflow));
 
-  if (presetSelect.value !== example.id) {
+  if (presetSelect && presetSelect.value !== example.id) {
     presetSelect.value = example.id;
   }
 
@@ -391,9 +391,11 @@ async function loadExamples() {
     const data = await res.json();
     state.examples = Array.isArray(data) ? data : (data.examples || []);
 
-    presetSelect.innerHTML = state.examples.map((ex) => `
-      <option value="${escapeHtml(ex.id)}">${escapeHtml(ex.name)}</option>
-    `).join("");
+    if (presetSelect) {
+      presetSelect.innerHTML = state.examples.map((ex) => `
+        <option value="${escapeHtml(ex.id)}">${escapeHtml(ex.name)}</option>
+      `).join("");
+    }
 
     renderWorkflowsGallery();
 
@@ -725,10 +727,12 @@ function attachEventListeners() {
   });
 
   // Preset Select change
-  presetSelect.addEventListener("change", () => {
-    const found = state.examples.find((ex) => ex.id === presetSelect.value);
-    if (found) selectExample(found);
-  });
+  if (presetSelect) {
+    presetSelect.addEventListener("change", () => {
+      const found = state.examples.find((ex) => ex.id === presetSelect.value);
+      if (found) selectExample(found);
+    });
+  }
 
   // Context Actions
   clearButton.addEventListener("click", () => {
@@ -856,28 +860,37 @@ function attachEventListeners() {
   });
 
   // Quick Action 1: Load Example
-  $("qa-load-example").addEventListener("click", () => {
-    if (!state.examples.length) return;
-    state.currentExampleIndex = (state.currentExampleIndex + 1) % state.examples.length;
-    selectExample(state.examples[state.currentExampleIndex]);
-  });
+  const qaLoad = $("qa-load-example");
+  if (qaLoad) {
+    qaLoad.addEventListener("click", () => {
+      if (!state.examples.length) return;
+      state.currentExampleIndex = (state.currentExampleIndex + 1) % state.examples.length;
+      selectExample(state.examples[state.currentExampleIndex]);
+    });
+  }
 
   // Quick Action 2: Export Workflow
-  $("qa-export-workflow").addEventListener("click", () => {
-    const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(state.workflow, null, 2));
-    const downloadAnchor = document.createElement("a");
-    downloadAnchor.setAttribute("href", dataStr);
-    downloadAnchor.setAttribute("download", `opensourcejev_workflow_${Date.now()}.json`);
-    document.body.appendChild(downloadAnchor);
-    downloadAnchor.click();
-    downloadAnchor.remove();
-  });
+  const qaExport = $("qa-export-workflow");
+  if (qaExport) {
+    qaExport.addEventListener("click", () => {
+      const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(state.workflow, null, 2));
+      const downloadAnchor = document.createElement("a");
+      downloadAnchor.setAttribute("href", dataStr);
+      downloadAnchor.setAttribute("download", `opensourcejev_workflow_${Date.now()}.json`);
+      document.body.appendChild(downloadAnchor);
+      downloadAnchor.click();
+      downloadAnchor.remove();
+    });
+  }
 
   // Quick Action 3: View Logs
-  $("qa-view-logs").addEventListener("click", () => {
-    renderLogs();
-    openModal("modal-logs");
-  });
+  const qaLogs = $("qa-view-logs");
+  if (qaLogs) {
+    qaLogs.addEventListener("click", () => {
+      renderLogs();
+      openModal("modal-logs");
+    });
+  }
 
   // Clear Logs
   $("clear-logs-btn").addEventListener("click", () => {

@@ -8,7 +8,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="/static/styles.css?v=5">
+  <link rel="stylesheet" href="/static/styles.css?v=6">
 </head>
 <body>
   <div class="app-container">
@@ -356,107 +356,6 @@
           </div>
         </div>
       </div>
-
-      <!-- 2. Workflow Preset Card -->
-      <div class="card preset-card">
-        <div class="preset-card-header">
-          <svg class="preset-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
-            <polyline points="14 2 14 8 20 8"/>
-            <line x1="16" y1="13" x2="8" y2="13"/>
-            <line x1="16" y1="17" x2="8" y2="17"/>
-          </svg>
-          <div>
-            <h3 class="card-title">Workflow Preset</h3>
-            <p class="card-sub">Load a template to get started.</p>
-          </div>
-        </div>
-
-        <div class="preset-select-wrap">
-          <select id="preset-select" class="form-select custom-preset-select">
-            <!-- Populated dynamically from examples -->
-          </select>
-          <svg class="select-chevron" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <polyline points="6 9 12 15 18 9"/>
-          </svg>
-        </div>
-      </div>
-
-      <!-- 3. Quick Actions Card -->
-      <div class="card quick-actions-card">
-        <div class="quick-header">
-          <svg class="quick-header-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>
-          </svg>
-          <div>
-            <h3 class="card-title">Quick Actions</h3>
-            <p class="card-sub">Common tasks and examples.</p>
-          </div>
-        </div>
-
-        <div class="quick-actions-list">
-          <!-- Action 1: Load Example -->
-          <button id="qa-load-example" class="quick-action-item" type="button">
-            <div class="qa-item-left">
-              <div class="qa-icon-wrap">
-                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
-                  <polyline points="7 10 12 15 17 10"/>
-                  <line x1="12" y1="15" x2="12" y2="3"/>
-                </svg>
-              </div>
-              <div class="qa-item-text">
-                <span class="qa-item-title">Load Example</span>
-                <span class="qa-item-sub">Try a sample command</span>
-              </div>
-            </div>
-            <svg class="qa-chevron" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <polyline points="9 18 15 12 9 6"/>
-            </svg>
-          </button>
-
-          <!-- Action 2: Export Workflow -->
-          <button id="qa-export-workflow" class="quick-action-item" type="button">
-            <div class="qa-item-left">
-              <div class="qa-icon-wrap">
-                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
-                  <polyline points="17 8 12 3 7 8"/>
-                  <line x1="12" y1="3" x2="12" y2="15"/>
-                </svg>
-              </div>
-              <div class="qa-item-text">
-                <span class="qa-item-title">Export Workflow</span>
-                <span class="qa-item-sub">Save as JSON</span>
-              </div>
-            </div>
-            <svg class="qa-chevron" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <polyline points="9 18 15 12 9 6"/>
-            </svg>
-          </button>
-
-          <!-- Action 3: View Logs -->
-          <button id="qa-view-logs" class="quick-action-item" type="button">
-            <div class="qa-item-left">
-              <div class="qa-icon-wrap">
-                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                  <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
-                  <polyline points="14 2 14 8 20 8"/>
-                  <line x1="16" y1="13" x2="8" y2="13"/>
-                  <line x1="16" y1="17" x2="8" y2="17"/>
-                </svg>
-              </div>
-              <div class="qa-item-text">
-                <span class="qa-item-title">View Logs</span>
-                <span class="qa-item-sub">See recent executions</span>
-              </div>
-            </div>
-            <svg class="qa-chevron" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <polyline points="9 18 15 12 9 6"/>
-            </svg>
-          </button>
-        </div>
-      </div>
     </aside>
   </div>
 
@@ -600,6 +499,6 @@
   <input id="model-input" type="hidden" value="models\Qwen3-1.7B-Q8_0.gguf">
   <input id="temperature-input" type="hidden" value="0.0">
 
-  <script src="/static/app.js?v=5"></script>
+  <script src="/static/app.js?v=6"></script>
 </body>
 </html>
