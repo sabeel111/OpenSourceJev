@@ -262,51 +262,6 @@ html.dark .nav-item.active {
   flex-shrink: 0;
 }
 
-/* User Profile */
-.user-profile-wrap {
-  padding: 0 2px;
-}
-
-.user-profile-card {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  cursor: pointer;
-  padding: 4px 6px;
-  border-radius: var(--radius-md);
-  transition: background 0.15s ease;
-}
-
-.user-profile-card:hover {
-  background: var(--bg-hover);
-}
-
-.user-avatar {
-  width: 28px;
-  height: 28px;
-  border-radius: 50%;
-  background: #EDE9FE;
-  color: #6D28D9;
-  font-size: 13px;
-  font-weight: 700;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-}
-
-.user-name {
-  font-size: 13px;
-  font-weight: 600;
-  color: var(--text-primary);
-  flex: 1;
-}
-
-.chevron-down-icon {
-  color: var(--text-dim);
-  flex-shrink: 0;
-}
-
 /* ==========================================================================
    2. Main Canvas (Center)
    ========================================================================== */
