@@ -1,0 +1,17 @@
+{
+  "source": "Empirical fitting on Qwen3.5-4B-Q4_K_M.gguf",
+  "model": "Qwen/Qwen3.5-4B",
+  "quantization": "Q4_K_M",
+  "noul": {
+    "temperature": 1.4603947597367997,
+    "method": "sigmoid((logit_true - logit_false) / temperature)",
+    "dataset": "BoolQ",
+    "fit_examples": 50,
+    "metrics": {
+      "accuracy": 0.76,
+      "nll": 0.4731,
+      "brier": 0.1502,
+      "ece": 0.2722
+    }
+  }
+}

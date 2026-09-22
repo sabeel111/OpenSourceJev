@@ -6,6 +6,7 @@ from app.native_engine import (
     _criteria_text,
     _log_softmax,
     _noul_temperature,
+    _resolve_calibration_path,
 )
 from app.models import Step
 
@@ -168,4 +169,19 @@ def test_native_trim_kv_is_invoked_when_supported():
     assert len(model.trims) == 1
     assert model.trims[0] == 1
     assert scored[1][3] == 2
+
+
+def test_model_scoped_calibration_resolution():
+    # Default model / Qwen3-1.7B
+    path_default = _resolve_calibration_path("models/Qwen3-1.7B-Q8_0.gguf")
+    assert path_default.name == "jev_calibration.json"
+    t_17b = _noul_temperature("models/Qwen3-1.7B-Q8_0.gguf")
+    assert abs(t_17b - 9.470457) < 0.001
+
+    # Qwen 3.5 4B
+    path_qwen35 = _resolve_calibration_path("models/qwen35-4b-q4km/Qwen3.5-4B-Q4_K_M.gguf")
+    assert path_qwen35.name == "jev_calibration_qwen35_4b_q4km.json"
+    t_35 = _noul_temperature("models/qwen35-4b-q4km/Qwen3.5-4B-Q4_K_M.gguf")
+    assert abs(t_35 - 1.4604) < 0.01
+
 

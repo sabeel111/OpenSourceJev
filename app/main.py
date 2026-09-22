@@ -189,8 +189,14 @@ async def systemone(payload: Dict[str, Any]) -> Dict[str, Any]:
         )
         workflow.append(step)
 
+    req_model = payload.get("model")
     bundled_model = ROOT / "models" / "Qwen3-1.7B-Q8_0.gguf"
-    model_path = os.getenv("JEV_LLAMA_MODEL", str(bundled_model) if bundled_model.is_file() else None)
+    qwen35_model = ROOT / "models" / "qwen35-4b-q4km" / "Qwen3.5-4B-Q4_K_M.gguf"
+    if req_model and ("qwen35" in req_model.lower() or "qwen3.5" in req_model.lower()) and qwen35_model.is_file():
+        default_model = str(qwen35_model)
+    else:
+        default_model = str(bundled_model) if bundled_model.is_file() else None
+    model_path = os.getenv("JEV_LLAMA_MODEL", default_model)
 
     req = RunRequest(
         context=state_str,

@@ -24,6 +24,7 @@ _MODEL_LOCKS: Dict[str, threading.RLock] = {}
 _MODEL_POOL: Dict[Tuple[str, int, int, int, int], CtypesLlama] = {}
 _POOL_LOCK = threading.RLock()
 _CALIBRATION_PATH = Path(__file__).resolve().parent.parent / "jev_calibration.json"
+_CALIBRATION_PATH_QWEN35 = Path(__file__).resolve().parent.parent / "jev_calibration_qwen35_4b_q4km.json"
 _DEFAULT_NOUL_TEMPERATURE = 9.470457368922842
 
 
@@ -41,13 +42,26 @@ def _env_float(name: str, default: float) -> float:
         return default
 
 
-def _noul_temperature() -> float:
-    """Return the recovered Colab calibration temperature for Noul."""
+def _resolve_calibration_path(model_path: Optional[str] = None) -> Path:
+    if model_path:
+        norm = model_path.lower().replace("\\", "/")
+        if "qwen35" in norm or "qwen3.5" in norm or "qwen-3.5" in norm:
+            if _CALIBRATION_PATH_QWEN35.is_file():
+                return _CALIBRATION_PATH_QWEN35
+    configured_path = os.getenv("JEV_CALIBRATION_PATH")
+    if configured_path and Path(configured_path).is_file():
+        return Path(configured_path)
+    return _CALIBRATION_PATH
+
+
+def _noul_temperature(model_path: Optional[str] = None) -> float:
+    """Return the recovered Colab or model-scoped calibration temperature for Noul."""
     configured = os.getenv("JEV_LLAMA_NOUL_TEMPERATURE")
     if configured is not None:
         return max(_env_float("JEV_LLAMA_NOUL_TEMPERATURE", _DEFAULT_NOUL_TEMPERATURE), 1e-6)
+    cal_path = _resolve_calibration_path(model_path)
     try:
-        data = json.loads(_CALIBRATION_PATH.read_text(encoding="utf-8"))
+        data = json.loads(cal_path.read_text(encoding="utf-8"))
         value = float(data["noul"]["temperature"])
         return max(value, 1e-6)
     except (OSError, KeyError, TypeError, ValueError, json.JSONDecodeError):
@@ -261,7 +275,7 @@ class NativeJevEngine:
 
                 try:
                     value, confidence, candidates = self._evaluate_step(
-                        model, request.context, outputs, step, request.temperature
+                        model, request.context, outputs, step, request.temperature, canonical_path
                     )
                     outputs[step.id] = value
                     noul_probability = None
@@ -310,7 +324,7 @@ class NativeJevEngine:
             "backend": "llama.cpp",
             "model_path": model_path,
             "prompt_style": os.getenv("JEV_LLAMA_PROMPT_STYLE", "qwen3").lower(),
-            "noul_temperature": _noul_temperature(),
+            "noul_temperature": _noul_temperature(model_path),
             "length_penalty_alpha": _length_penalty_alpha(),
             "step_count": len(request.workflow),
             "elapsed_ms": round((time.perf_counter() - started) * 1000),
@@ -324,6 +338,7 @@ class NativeJevEngine:
         outputs: Dict[str, Any],
         step: Step,
         temperature: float,
+        model_path: Optional[str] = None,
     ) -> Tuple[Any, Optional[float], List[Dict[str, Any]]]:
         prefix = self._decision_prefix(context, outputs, step)
         if step.kind == "text":
@@ -333,7 +348,7 @@ class NativeJevEngine:
         scored = self._score_candidates(model, prefix, specs)
         alpha = _length_penalty_alpha() if step.kind in {"choice", "score"} else 0.0
         raw_probabilities = self._candidate_probabilities(scored, alpha=alpha)
-        calibration_temperature = _noul_temperature() if step.kind == "noul" else 1.0
+        calibration_temperature = _noul_temperature(model_path) if step.kind == "noul" else 1.0
         probabilities = self._candidate_probabilities(scored, calibration_temperature, alpha=alpha)
         candidates = []
         for index, ((value, _text, logprob, token_count), probability) in enumerate(zip(scored, probabilities)):
