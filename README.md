@@ -68,7 +68,7 @@ You can select a profile via:
 * **Dual-Model Architecture (`fast` vs `accuracy`)**: Switch seamlessly between ultra-low latency (`fast`: **Qwen3-1.7B-Q8_0**, p50 ~312ms) and high-precision semantic decisioning (`accuracy`: **Qwen3.5-4B-Q4_K_M**, 93.06% on JevBench Original, 100% on JevBench Easy).
 * **Guaranteed Type Safety (Zero Syntax Errors)**: By projecting logits strictly over a finite candidate set, output schemas are mathematically guaranteed. Formatting hallucinations and malformed JSON are impossible.
 * **Dynamic VRAM Pool Eviction**: Engineered for 4GB consumer GPUs (like RTX 3050 Laptop). The engine safely purges prior weights and runs garbage collection before loading a new profile, guaranteeing zero CUDA OOM errors.
-* **Direct C-API Logits Extraction**: Bypasses slow Python wrappers and high-level chat APIs by directly interfacing with prebuilt `llama.dll` through Python's `ctypes`. Reads raw float32 logits via `llama_get_logits_ith`.
+* **Direct C-API Logits Extraction**: Bypasses slow Python wrappers and high-level chat APIs by directly interfacing with native `llama.cpp` shared libraries (`llama.dll` on Windows, `libllama.so` on Linux, `libllama.dylib` on macOS) through Python's `ctypes`. Reads raw float32 logits via `llama_get_logits_ith`.
 * **Multi-Token Candidate Scoring**: Evaluates multi-token phrases (e.g. `"technical support"`) by accumulating conditional log-probabilities with length normalization ($\alpha$-penalty).
 * **Model-Scoped Temperature Calibration**: Calibrated against Google BoolQ validation sets with held-out splits ($T \approx 9.4705$ for Qwen3-1.7B; $T \approx 1.2364$ for Qwen3.5-4B), minimizing Expected Calibration Error (ECE) and Brier scores.
 * **The 4 Native Decision Primitives**:
@@ -85,11 +85,9 @@ You can select a profile via:
 
 ## 🛠️ System Requirements
 
-* **Operating System**: **Windows 10 / 11 (64-bit)** only
-  > [!WARNING]
-  > **Linux is currently NOT supported**: OpenSourceJev currently relies on Windows-specific native prebuilt `llama.cpp` dynamic libraries (`.dll` / `.exe`) and PowerShell runtime automation. Linux (`.so` / bash) support is planned for a future release.
+* **Operating System**: **Linux** (Ubuntu, Debian, Fedora, Arch, etc.), **Windows 10 / 11 (64-bit)**, or **macOS** (Apple Silicon / Intel)
 * **Python**: Python 3.11 or newer
-* **GPU**: NVIDIA GPU with CUDA 12.x (e.g. RTX 3050 Laptop GPU or desktop GPU with $\ge$ 4 GB VRAM). CPU inference is also supported.
+* **GPU**: NVIDIA GPU with CUDA 12.x (e.g. RTX 3050 Laptop GPU or desktop GPU with $\ge$ 4 GB VRAM) for accelerated inference. CPU inference is also fully supported across all platforms.
 * **RAM**: 8 GB+ RAM
 
 ---
@@ -105,23 +103,54 @@ cd OpenSourceJev
 ### 2. Set Up Python Environment
 Create and activate a virtual environment:
 
+**Linux / macOS:**
+```bash
+python3 -m venv .venv
+source .venv/bin/activate
+pip install -r requirements.txt
+```
+
+**Windows PowerShell:**
 ```powershell
-# Windows PowerShell
 python -m venv .venv
 .\.venv\Scripts\Activate.ps1
-
-# Install core dependencies
 pip install -r requirements.txt
 ```
 
 ### 3. Set Up the Native `llama.cpp` Runtime
-The native engine uses prebuilt `llama.cpp` CUDA DLLs. On Windows with CUDA 12.4, run the automated setup script:
+
+#### Linux & macOS
+OpenSourceJev features an automatic cross-platform ctypes resolver that finds `libllama.so` (Linux) or `libllama.dylib` (macOS) and dependent GGML libraries out-of-the-box:
+
+1. **Install OpenMP**:
+   ```bash
+   # Ubuntu / Debian
+   sudo apt update && sudo apt install -y libgomp1
+
+   # Fedora / RHEL
+   sudo dnf install -y libgomp
+
+   # Arch Linux
+   sudo pacman -S openmp
+   ```
+
+2. **Provide llama.cpp Shared Libraries**:
+   - Place your compiled or prebuilt `libllama.so` and `libggml.so` into `runtime/llama.cpp/lib/` or `runtime/llama.cpp/`
+   - Or point to an existing build directory via environment variables:
+     ```bash
+     export JEV_LLAMA_RUNTIME=/path/to/llama.cpp
+     # Or point directly to the shared library:
+     export JEV_LLAMA_DLL=/path/to/libllama.so
+     ```
+
+#### Windows
+On Windows with CUDA 12.4, run the automated setup script:
 
 ```powershell
 .\install_native_cuda.ps1
 ```
 
-This extracts the necessary runtime libraries into `runtime/llama.cpp/bin/`.
+This extracts the prebuilt runtime libraries into `runtime/llama.cpp/bin/`.
 
 ### 4. Download a Compatible GGUF Model
 Download a GGUF model (e.g., **Qwen3-1.7B-Q8_0.gguf** or any Qwen2.5 / Qwen3 / Llama GGUF) and place it into the `models/` directory:
@@ -138,8 +167,14 @@ models/Qwen3-1.7B-Q8_0.gguf
 
 ### Launch the Web Playground & API
 
-Start the engine using the launcher:
+**On Linux / macOS:**
+```bash
+chmod +x run_mvp.sh
+./run_mvp.sh
+```
+*(Or directly: `uvicorn app.main:app --host 127.0.0.1 --port 8000`)*
 
+**On Windows:**
 ```powershell
 .\run_mvp.ps1
 ```
@@ -299,7 +334,7 @@ pytest
 - [x] FastAPI web playground & execution trace visualization
 - [x] Real-time ViZDoom controller demo
 - [ ] **Parallel KV-cache sequence copying (`llama_kv_cache_seq_cp`)** to evaluate $N$ independent questions simultaneously in $O(1)$ passes
-- [ ] Cross-platform Linux support (Linux x86_64 `.so` prebuilts & bash runtime scripts)
+- [x] Cross-platform Linux & macOS support (native `.so` and `.dylib` ctypes resolver with dynamic library discovery)
 - [ ] Multi-class calibration (Vector scaling / Matrix scaling) for `Choice`
 - [ ] RLCD LoRA fine-tuning recipes for open-source models
 
